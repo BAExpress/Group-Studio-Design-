@@ -2,7 +2,14 @@ import cors from 'cors'
 import express from 'express'
 import multer from 'multer'
 
-import { computeKpis, drivers, routes } from './data.js'
+import {
+  allPostcodes,
+  computeKpis,
+  drivers,
+  getAsrDsrRows,
+  getStopsSummary,
+  routes,
+} from './data.js'
 import { parseDiscoFile } from './import-parser.js'
 
 const app = express()
@@ -21,6 +28,49 @@ app.get('/api/routes', (_req, res) => {
 
 app.get('/api/drivers', (_req, res) => {
   res.json(drivers)
+})
+
+app.get('/api/postcodes', (_req, res) => {
+  res.json(allPostcodes)
+})
+
+app.get('/api/asr-dsr-listing', (_req, res) => {
+  res.json(getAsrDsrRows())
+})
+
+app.get('/api/routes/:id/stops', (req, res) => {
+  const route = routes.find((r) => r.id === req.params.id)
+  if (!route) return res.status(404).json({ error: 'Rota não encontrada' })
+  res.json(getStopsSummary(route))
+})
+
+app.get('/api/routes/:id/shipment-details', (req, res) => {
+  const route = routes.find((r) => r.id === req.params.id)
+  if (!route) return res.status(404).json({ error: 'Rota não encontrada' })
+  res.json({
+    routeId: route.code,
+    driver: route.driver,
+    vehicle: route.vehicle,
+    totalStops: route.stopsTotal,
+    deliveries: route.deliveries,
+    pickups: route.pickups,
+    totalWeightKg: route.totalWeightKg,
+  })
+})
+
+app.post('/api/routes/:id/postcodes', (req, res) => {
+  const route = routes.find((r) => r.id === req.params.id)
+  if (!route) return res.status(404).json({ error: 'Rota não encontrada' })
+  const { postcodes } = req.body ?? {}
+  if (!Array.isArray(postcodes) || postcodes.length === 0) {
+    return res.status(400).json({ error: 'Selecione ao menos um postcode' })
+  }
+  postcodes.forEach((code: string) => {
+    if (!route.subpostcodes.some((s) => s.code === code)) {
+      route.subpostcodes.push({ code, del: 1, pu: 0, total: 1 })
+    }
+  })
+  res.json(route)
 })
 
 app.get('/api/routes/:id/rebalance-preview', (req, res) => {
@@ -46,6 +96,16 @@ app.post('/api/routes/:id/rebalance', (req, res) => {
   res.json(route)
 })
 
+app.post('/api/routes/send-to-rebalance', (_req, res) => {
+  const affected = routes.filter((r) => r.capacityState === 'rebalance')
+  affected.forEach((route) => {
+    route.capacityState = 'default'
+    route.status = 'validated'
+    route.stopsDone = route.stopsTotal
+  })
+  res.json({ updatedCount: affected.length, routes })
+})
+
 app.post('/api/routes/:id/validate', (req, res) => {
   const route = routes.find((r) => r.id === req.params.id)
   if (!route) return res.status(404).json({ error: 'Rota não encontrada' })
@@ -65,6 +125,7 @@ app.post('/api/routes', (req, res) => {
     id: `route-${Date.now()}`,
     code: code.toUpperCase(),
     driver: driver.name,
+    vehicle: 'CAR-NEW',
     shift: 'AM' as const,
     status: 'pending' as const,
     capacityState: 'default' as const,
@@ -74,7 +135,9 @@ app.post('/api/routes', (req, res) => {
     pickups: 0,
     preNoon: 0,
     targetPercent: 0,
+    totalWeightKg: 0,
     subpostcodes: [],
+    stops: [],
   }
   routes.push(newRoute)
   res.status(201).json(newRoute)

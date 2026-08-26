@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,12 +11,22 @@ export function RouteCard({
   route,
   onRebalance,
   onValidate,
+  onSeeDetails,
+  onSeeAllStops,
+  collapseSignal,
 }: {
   route: Route
   onRebalance: (route: Route) => void
   onValidate: (route: Route) => void
+  onSeeDetails: (route: Route) => void
+  onSeeAllStops: (route: Route) => void
+  collapseSignal: number
 }) {
   const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    setExpanded(false)
+  }, [collapseSignal])
   const percent =
     route.stopsTotal === 0
       ? 0
@@ -91,10 +101,20 @@ export function RouteCard({
             </tbody>
           </table>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" className="flex-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              onClick={() => onSeeDetails(route)}
+            >
               See details
             </Button>
-            <Button variant="secondary" size="sm" className="flex-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              onClick={() => onSeeAllStops(route)}
+            >
               See all stops
             </Button>
           </div>

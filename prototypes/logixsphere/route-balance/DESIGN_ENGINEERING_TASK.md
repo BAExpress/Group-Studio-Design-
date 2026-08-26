@@ -70,3 +70,20 @@ envolvido; dados seguem mock em memória, resetando a cada cold start da
 função. Isto amplia levemente o escopo original (server local/dev-only) para
 incluir uma publicação pública de revisão — decisão tomada como D0/D1
 (reversível, específica deste protótipo), não escalada.
+
+## Atualização — 2026-08-26: escopo ampliado a partir da página Doing
+
+A pedido do solicitante ("quero uma cópia fiel das páginas da aba Doing,
+quero todo o workflow funcional"), o escopo foi ampliado além do handoff
+original. Mapeamento da página Doing do Figma mostrou uma casca de app mais
+rica (topbar com busca/data/usuário, toolbar de ações) e cinco fluxos
+adicionais: Import como página cheia de 2 passos (upload → preview com
+Pre-12/Postcode Analysis/Size Class), Add Post Code, PM ASR/DSR Listing,
+Shipment Details, All Stops e Send to Rebalance (ação em lote). Confirmado
+com o solicitante antes de implementar: (1) construir tudo de uma vez, sem
+checkpoints intermediários; (2) sem replicar os 3 breakpoints do Figma
+(tablet/desktop 27"/ultrawide 49") — cobertura só desktop. O restante do
+board Doing (grupos de exploração sem nome, cópias duplicadas do dashboard)
+foi identificado como ruído de WIP e não foi replicado. Dados mock
+estendidos (stops por rota, postcodes, veículo/peso) seguem a mesma
+convenção de aproximação plausível já registrada acima.

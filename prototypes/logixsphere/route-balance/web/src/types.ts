@@ -22,6 +22,7 @@ export type Route = {
   id: string
   code: string
   driver: string
+  vehicle: string
   shift: RouteShift
   status: RouteStatus
   capacityState: RouteCapacityState
@@ -31,6 +32,7 @@ export type Route = {
   pickups: number
   preNoon: number
   targetPercent: number
+  totalWeightKg: number
   subpostcodes: SubpostcodeRow[]
 }
 
@@ -59,4 +61,49 @@ export type RebalancePreview = {
   totalStops: number
   progressPercent: number
   subpostcodes: SubpostcodeRow[]
+}
+
+export type StopCategory = 'ASR' | 'DSR' | 'STANDARD'
+export type StopStatus = 'PENDING' | 'DELIVERED' | 'NO-SHOW'
+
+export type Stop = {
+  address: string
+  postcode: string
+  customer: string
+  category: StopCategory
+  status: StopStatus
+}
+
+export type StopsSummary = {
+  routeCode: string
+  driver: string
+  preNoon: number
+  asrCount: number
+  dsrCount: number
+  noShowCount: number
+  stops: Stop[]
+}
+
+export type ShipmentDetails = {
+  routeId: string
+  driver: string
+  vehicle: string
+  totalStops: number
+  deliveries: number
+  pickups: number
+  totalWeightKg: number
+}
+
+export type AsrDsrRow = {
+  route: string
+  driver: string
+  postcode: string
+  customer: string
+  category: StopCategory
+  status: StopStatus
+}
+
+export type SendToRebalanceResult = {
+  updatedCount: number
+  routes: Route[]
 }
