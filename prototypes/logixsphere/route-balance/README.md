@@ -4,6 +4,12 @@ Protótipo funcional do módulo **Route Balance**, especificado no handoff do Fi
 "Logix Sphere" (página Handoff → `handoff-route-balance`). Não é produção — ver
 `DESIGN_ENGINEERING_TASK.md` para escopo, constraints e caminho de promoção.
 
+**Publicado (revisão):** https://web-seven-weld-58.vercel.app — projeto Vercel
+`web` na conta `jhophjm-8408`. Dados mock em memória: resetam a cada cold
+start da função serverless e não são compartilhados de forma garantida entre
+sessões/visitantes — normal para protótipo de revisão, não é comportamento de
+produção. Redeploy: `cd web && npx vercel deploy --prod`.
+
 ## Rodando localmente
 
 ```bash
@@ -22,13 +28,20 @@ Se preferir dois terminais: `npm run dev:server` e `npm run dev:web`.
 
 - `web/` — Vite + React + TypeScript + Tailwind CSS + Radix UI/shadcn
   (componentes copiados em `web/src/components/ui/`), conforme DR-GDS-001.
-- `server/` — Express local/dev-only. Dados em memória (resetam a cada
-  restart). O único fluxo com processamento real de arquivo é
-  `POST /api/import`, que faz parse de verdade do `.xlsx`/`.xls`/`.xlsm`
-  enviado (lib `xlsx`/SheetJS); o resto dos dados (KPIs, rotas, motoristas)
-  é mock fixo. Ver nota de governança no `DESIGN_ENGINEERING_TASK.md` sobre o
-  uso de Node/Express aqui não estar coberto pela DR-GDS-001 (que definiu só
-  o front-end).
+- `server/` — Express local/dev-only, usado com `npm run dev` (ver acima).
+  Dados em memória (resetam a cada restart).
+- `web/api/` — a MESMA lógica de `server/src/`, espelhada manualmente como
+  Vercel Serverless Function (`web/api/index.ts`, mesmo Express app, sem
+  `app.listen`) para a versão publicada. É duplicação deliberada — um
+  protótipo não justifica infraestrutura de monorepo/workspace só para
+  compartilhar esse código; se isto virar algo de vida mais longa, vale
+  unificar. Ao alterar uma regra de negócio em `server/src/`, replique em
+  `web/api/_lib/`.
+  O único fluxo com processamento real de arquivo é `POST /api/import`, que
+  faz parse de verdade do `.xlsx`/`.xls`/`.xlsm` enviado (lib `xlsx`/SheetJS);
+  o resto dos dados (KPIs, rotas, motoristas) é mock fixo. Ver nota de
+  governança no `DESIGN_ENGINEERING_TASK.md` sobre o uso de Node/Express aqui
+  não estar coberto pela DR-GDS-001 (que definiu só o front-end).
 
 ## O que validar em tela
 

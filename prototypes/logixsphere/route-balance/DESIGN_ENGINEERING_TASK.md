@@ -57,3 +57,16 @@ Evidence required: captura de tela ou gravação do dev server rodando localment
 com os fluxos acima navegáveis; link desta pasta no registro de trabalho (Jira)
 correspondente, quando existir.
 ```
+
+## Atualização — 2026-08-26: publicação no Vercel
+
+A pedido do solicitante, o protótipo foi publicado para revisão em
+https://web-seven-weld-58.vercel.app (projeto Vercel `web`, conta
+`jhophjm-8408`). Para viabilizar isso sem alterar o fluxo de dev local já
+validado, o backend Express foi espelhado como Vercel Serverless Function em
+`web/api/` (mesma lógica de `server/src/`, mantida manualmente em sincronia —
+ver `README.md`). Nenhum dado real, credencial ou sistema de produção está
+envolvido; dados seguem mock em memória, resetando a cada cold start da
+função. Isto amplia levemente o escopo original (server local/dev-only) para
+incluir uma publicação pública de revisão — decisão tomada como D0/D1
+(reversível, específica deste protótipo), não escalada.
