@@ -37,7 +37,7 @@ explícito no terminal. Duas opções:
 ## Navegação
 
 `web/src/App.tsx` usa `react-router-dom` (`BrowserRouter`) com duas rotas
-reais — `/import` e `/dashboard` (raiz redireciona para `/import`) — em vez
+reais — `/dashboard` e `/import` (raiz redireciona para `/dashboard`) — em vez
 de troca de estado interna. Back/forward do navegador e reload direto em
 qualquer uma das duas URLs funcionam; a sidebar (`SidebarNav`) e o toolbar
 navegam via `useNavigate`/`NavLink`. `web/vercel.json` tem um rewrite
