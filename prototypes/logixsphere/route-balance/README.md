@@ -1,18 +1,113 @@
 # Route Balance — protótipo (LogixSphere)
 
-Protótipo funcional do módulo **Route Balance**. Escopo original vindo do
-handoff do Figma (página Handoff → `handoff-route-balance`); a casca do app
-(topbar, toolbar de ações, footer) e os fluxos de Import, Add Post Code, PM
-ASR/DSR Listing, Shipment Details, All Stops e Send to Rebalance vieram do
-board de exploração (página Doing), a pedido do solicitante em 2026-08-26.
-Não é produção — ver `DESIGN_ENGINEERING_TASK.md` para escopo, constraints e
-caminho de promoção.
+Protótipo do módulo **Route Balance**. Escopo original vindo do handoff do
+Figma (página Handoff → `handoff-route-balance`); a casca do app (topbar,
+toolbar de ações, footer) e os fluxos de Import, Add Post Code, All Stops,
+Special Deliveries, Rebalance Preview e Add New Flex Route vieram do board de
+exploração (página Doing). Não é produção — ver `DESIGN_ENGINEERING_TASK.md`
+para escopo, constraints e caminho de promoção.
+
+## ⚠️ Divergência de stack em aberto (DR-GDS-001)
+
+Em **2026-08-27**, a pedido do solicitante, a implementação em React foi
+removida. O protótipo é **HTML estático — uma página por frame do Figma**,
+sem framework, sem build e sem JS/CSS compartilhado entre páginas: cada
+arquivo é autocontido (estilos e script inline).
+
+A `DR-GDS-001` (Accepted, 2026-08-20) continua vigente e determina
+Vite + React + TypeScript + Tailwind + Radix/shadcn para
+`prototypes/logixsphere/`. **Este protótipo contradiz essa decisão e depende
+de um novo Decision Record que a substitua** (os DRs são canônicos no Shared
+Drive do Studio, `01_Governance` — não neste repositório). Até lá, trate esta
+pasta como exceção registrada, não como precedente.
+
+A versão React está preservada no branch **`react/route-balance-doing`**
+(commit `00d66b8`).
+
+## Estrutura
+
+Cada página é um arquivo `.html` completo, com CSS (custom properties
+light/dark) e JS inline — sem dependências, sem build:
+
+- `web/01-dashboard.html` — dashboard Route Balance (KPIs, grade de 8 route
+  cards, toolbar de ações). Expandir/colapsar card é o único estado com JS
+  próprio; os demais botões navegam para a página correspondente.
+- `web/02-import-disco.html` — fluxo de importação DISCO em 2 estados
+  (upload → grade de demandas extraídas), com toast de sucesso.
+- `web/03-route-card-states.html` — sheet de referência do componente Route
+  Card nos três estados (Default / Expanded / Rebalance), fora do fluxo do
+  app.
+- `web/04-modal-add-postcode.html` — modal Add_Postcode sobre o dashboard.
+- `web/05-modal-special-deliveries.html` — modal Special Deliveries.
+- `web/06-modal-all-stops.html` — modal All Stops.
+- `web/07-modal-rebalance-preview.html` — modal Rebalance Preview.
+- `web/08-modal-add-flex-route.html` — modal Add New Flex Route.
+- `server/` e `web/api/` — mock API Express / Vercel Serverless que servia a
+  versão React anterior. **Nenhuma página HTML atual a consome** — os dados
+  são fixos, embutidos em cada arquivo. Mantido no repo até decidir se volta
+  a ser usado ou é removido.
+
+As páginas de modal (04–08) são telas completas — reproduzem o dashboard ao
+fundo com um overlay, replicando fielmente o frame do Figma — não `<dialog>`
+nem componente reaproveitável. Fechar (×) ou "Cancel" navegam de volta para
+`01-dashboard.html`.
+
+## Navegação ligada
+
+A partir de `01-dashboard.html`:
+- **Importar** → `02-import-disco.html`
+- **+ Add New Flex Rote** → `08-modal-add-flex-route.html`
+- **Special Deliveries ★** (no card expandido) → `05-modal-special-deliveries.html`
+- **See All Stops** (no card expandido) → `06-modal-all-stops.html`
+- **⇄ Rebalance** (card no card no estado 100%+) → `07-modal-rebalance-preview.html`
+
+Sem entrada no dashboard para `04-modal-add-postcode.html` (não há botão
+"Add Post Code" nesta versão do dashboard) nem para `03-route-card-states.html`
+(sheet de referência, não faz parte do fluxo) — abra-os diretamente pela URL.
+"Colapse Routes", "See Details" e "▷ Save" não têm página/comportamento
+associado nesta rodada.
+
+## Rodando localmente
+
+Não há build nem dependências: **abra `web/01-dashboard.html` no navegador**
+(duplo clique funciona).
+
+Se preferir servir por HTTP:
+
+```bash
+npm run dev     # python3 -m http.server 5173 --directory web
+```
+
+E abra `http://localhost:5173/01-dashboard.html`.
+
+## Pendências conhecidas
+
+- **Novo Decision Record de stack** — ver aviso no topo.
+- **Dados fixos por página.** Cada arquivo tem seus próprios números
+  hardcoded; não há estado compartilhado entre páginas (ex.: validar uma rota
+  no dashboard não reflete nos modais, que sempre mostram os mesmos dados de
+  exemplo).
+- **Todos os route cards mostram "Carlos Silva" / "YF25 OZL" / "Route A-01".**
+  Só done/total variam entre os 8 cards do dashboard — os demais campos são
+  placeholder repetido.
+- **Sem entrada de dashboard para Add_Postcode** (página existe, órfã) e sem
+  página para "Colapse Routes" (tem JS), "See Details" e "▷ Save" (sem
+  handler/destino).
+- **Import não lê o arquivo.** "Process File" sempre mostra a mesma amostra
+  (A01–A04, 8 courier segments), independente do arquivo selecionado.
+- Alguns valores exatos de tokens/copy podem não refletir 100% o handoff —
+  conferir com Aline antes de promover qualquer coisa para `design-system/`
+  ou `components/approved/`.
+- Sem breakpoints responsivos (tablet/desktop 27"/ultrawide 49" do Figma) —
+  esta versão cobre só desktop.
+- Sem suíte de testes automatizada nesta rodada.
+
+## Publicação (Vercel)
 
 **Publicado (revisão):** https://web-seven-weld-58.vercel.app — projeto Vercel
-`web` na conta `jhophjm-8408`. Dados mock em memória: resetam a cada cold
-start da função serverless e não são compartilhados de forma garantida entre
-sessões/visitantes — normal para protótipo de revisão, não é comportamento de
-produção.
+`web` na conta `jhophjm-8408`. **Essa URL ainda serve a versão React**; o
+projeto precisa ser reconfigurado para site estático (sem build, apontando
+para `01-dashboard.html`) antes do próximo deploy.
 
 **Redeploy — cuidado, `cd web && npx vercel deploy --prod` normalmente trava**
 em "Building…" para sempre. Causa raiz confirmada via `--debug`: o Vercel lê o
@@ -24,93 +119,11 @@ explícito no terminal. Duas opções:
    `gues-who@users.noreply.github.com` como membro (ou desabilitar a
    verificação de autor de commit para deploys via CLI), se isso fizer
    sentido para o Studio.
-2. **Contorno (o que foi usado para publicar esta versão)**: copiar `web/`
-   (sem `node_modules`, sem `dist`, mantendo `.vercel/`) para um diretório
-   FORA do repositório git e rodar `vercel deploy --prod --yes` de lá — sem
-   `.git` no caminho, o Vercel não anexa metadados de autor e o bloqueio não
-   é acionado.
+2. **Contorno (o que foi usado para publicar a versão anterior)**: copiar
+   `web/` para um diretório FORA do repositório git e rodar
+   `vercel deploy --prod --yes` de lá — sem `.git` no caminho, o Vercel não
+   anexa metadados de autor e o bloqueio não é acionado.
    ```bash
-   rsync -a --exclude node_modules --exclude dist web/ /tmp/rb-deploy-stage/
+   rsync -a web/ /tmp/rb-deploy-stage/
    cd /tmp/rb-deploy-stage && npx vercel deploy --prod --yes
    ```
-
-## Navegação
-
-`web/src/App.tsx` usa `react-router-dom` (`BrowserRouter`) com duas rotas
-reais — `/dashboard` e `/import` (raiz redireciona para `/dashboard`) — em vez
-de troca de estado interna. Back/forward do navegador e reload direto em
-qualquer uma das duas URLs funcionam; a sidebar (`SidebarNav`) e o toolbar
-navegam via `useNavigate`/`NavLink`. `web/vercel.json` tem um rewrite
-catch-all para `index.html` (fora de `/api`) para o reload direto funcionar
-também na versão publicada. Os demais "sub-fluxos" (All Stops, Shipment
-Details, Add Post Code, PM ASR/DSR Listing, Special Deliveries, Send to
-Rebalance/Drivers) continuam como modais sobre `/dashboard`, não como rotas
-próprias — não têm URL própria no Figma, então não ganharam uma aqui.
-
-## Rodando localmente
-
-```bash
-npm install --prefix server
-npm install --prefix web
-npm run dev
-```
-
-Isso sobe o mock API (Express) em `http://localhost:4000` e o front (Vite) em
-`http://localhost:5173`, com o Vite fazendo proxy de `/api` para o servidor.
-Abra `http://localhost:5173`.
-
-Se preferir dois terminais: `npm run dev:server` e `npm run dev:web`.
-
-## Estrutura
-
-- `web/` — Vite + React + TypeScript + Tailwind CSS + Radix UI/shadcn
-  (componentes copiados em `web/src/components/ui/`), conforme DR-GDS-001.
-- `server/` — Express local/dev-only, usado com `npm run dev` (ver acima).
-  Dados em memória (resetam a cada restart).
-- `web/api/` — a MESMA lógica de `server/src/`, espelhada manualmente como
-  Vercel Serverless Function (`web/api/index.ts`, mesmo Express app, sem
-  `app.listen`) para a versão publicada. É duplicação deliberada — um
-  protótipo não justifica infraestrutura de monorepo/workspace só para
-  compartilhar esse código; se isto virar algo de vida mais longa, vale
-  unificar. Ao alterar uma regra de negócio em `server/src/`, replique em
-  `web/api/_lib/`.
-  O único fluxo com processamento real de arquivo é `POST /api/import`, que
-  faz parse de verdade do `.xlsx`/`.xls`/`.xlsm` enviado (lib `xlsx`/SheetJS);
-  o resto dos dados (KPIs, rotas, motoristas, postcodes, stops) é mock fixo.
-  Ver nota de governança no `DESIGN_ENGINEERING_TASK.md` sobre o uso de
-  Node/Express aqui não estar coberto pela DR-GDS-001 (que definiu só o
-  front-end).
-
-## O que validar em tela
-
-**Import (tela inicial, antes do dashboard):**
-- Arraste um `.xlsx` qualquer (ou use o seletor) — Pre-12, Análise de
-  Postcodes e Análise de Size Class refletem o conteúdo real do arquivo
-  enviado. "Voltar" reprocessa; "Ir para Route Balance" entra no dashboard.
-
-**Dashboard:**
-- Topbar: busca decorativa + data/hora ao vivo + usuário. Toolbar: busca
-  funcional (filtra os cards por rota/motorista), Add Post Code, Collapse
-  Routes (recolhe todos os cards expandidos de uma vez), PM ASR/DSR Listing,
-  Shipment Details, Add New Flex Route, Send to Rebalance.
-- Barra de KPIs — atualiza sozinha após Validate/Rebalance/Send to Rebalance
-  (sem precisar recarregar a página).
-- Grade de route cards: expandir (+/–) mostra o detalhamento por subcódigo
-  postal, com "See details" (abre Shipment Details da rota) e "See all
-  stops" (abre a listagem completa de paradas). "Validate" muda o status do
-  card; o card `ROUTE A-04` já nasce em estado de rebalanceamento (borda
-  vermelha) — "Rebalance" abre o modal de prévia por rota, ou use "Send to
-  Rebalance" na toolbar para tratar em lote todas as rotas nesse estado.
-- "Add Post Code": escolhe uma rota e adiciona um ou mais postcodes reais à
-  tabela de subcódigos daquela rota.
-
-## Pendências conhecidas
-
-- Alguns valores exatos de tokens/copy não estavam 100% legíveis no viewer do
-  Figma sem login (sinalizado inline no código) — conferir com Aline antes de
-  promover qualquer coisa para `design-system/` ou `components/approved/`.
-- Breakpoints responsivos (tablet/desktop 27"/ultrawide 49" no Figma): esta
-  versão cobre só desktop, por decisão explícita do solicitante — sem grid
-  fiel aos 3 breakpoints.
-- Sem suíte de testes automatizada nesta rodada (protótipo de validação
-  visual/interação).

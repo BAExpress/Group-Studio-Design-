@@ -4,9 +4,8 @@
   "version": "0.1.0",
   "description": "Protótipo funcional (não production-ready) do módulo Route Balance do LogixSphere. Ver DESIGN_ENGINEERING_TASK.md.",
   "scripts": {
-    "dev": "concurrently -n server,web -c yellow,green \"npm run dev --prefix server\" \"npm run dev --prefix web\"",
-    "dev:server": "npm run dev --prefix server",
-    "dev:web": "npm run dev --prefix web"
+    "dev": "python3 -m http.server 5173 --directory web",
+    "dev:server": "npm run dev --prefix server"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

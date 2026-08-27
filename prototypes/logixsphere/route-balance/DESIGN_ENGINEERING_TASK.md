@@ -147,3 +147,225 @@ dessa pasta. Isso corrigiu várias leituras erradas de rodadas anteriores
   descartado como ruído era, na verdade, um teste de QA do campo de chips
   com muitas seleções — não é uma tela nova, só confirma o comportamento
   do combobox acima.
+
+## Atualização — 2026-08-27: reconstrução em React e migração para HTML estático
+
+Duas mudanças no mesmo dia, ambas a pedido do solicitante.
+
+**1. Reconstrução em React.** A interface tinha sido zerada (só restaram
+`main.tsx`, `index.css`, `types.ts` e `lib/api.ts`) para ser refeita a partir
+dos frames do Figma. As nove telas/componentes da aba Doing foram
+reconstruídos sobre esse setup a partir dos prompts de handoff. Nessa rodada
+os rótulos dos KPIs voltaram para **Total Stops / Pré-Deliveries / Amended
+Service Rate / Delayed Service Rate**, conforme os prompts — substituindo a
+nomenclatura `Pré 12 Deliveries / SPR / Target` que estava na working tree.
+
+**2. Saída do React.** Em seguida o solicitante pediu para remover o React e
+refazer tudo em HTML. O protótipo passou a ser **HTML estático + CSS próprio
+(sem Tailwind) + JS vanilla**, com os dados mock embutidos em
+`web/assets/data.js` — sem build, sem dependências, sem servidor.
+
+**Nota de governança — divergência em aberto.** Isto contraria diretamente a
+`DR-GDS-001` (Accepted, 2026-08-20), que fixa Vite + React + TypeScript +
+Tailwind + Radix/shadcn para `prototypes/logixsphere/` e exige um novo
+Decision Record para qualquer troca de framework. Diferente das ampliações
+anteriores (Express local, publicação no Vercel), que eram adições não
+cobertas pela decisão, esta é uma **contradição direta de uma decisão
+Accepted** — não cabe na autoridade de organização/protótipo do steward e
+**precisa de um DR substituindo a DR-GDS-001**, registrado no Shared Drive
+(`01_Governance`). A divergência foi comunicada ao solicitante antes da
+execução e reafirmada por ele; fica registrada aqui e no topo do `README.md`
+até que o DR exista.
+
+A implementação em React está preservada no branch
+`react/route-balance-doing` (commit `00d66b8`), então a reversão é barata se
+o DR não for aprovado.
+
+**Consequências funcionais assumidas:** sem parser XLSX real (a tela de import
+mostra a amostra de ingestão do handoff qualquer que seja o arquivo), sem
+persistência de "Add Post Code", e sem as primitives Radix — foco/teclado/aria
+passam a depender de `<dialog>` nativo e do HTML escrito à mão, o que reduz a
+garantia de acessibilidade que a constraint original assumia.
+
+## Atualização — 2026-08-27 (cont.): páginas definitivas fornecidas pelo solicitante
+
+O solicitante entregou os 8 arquivos `.html` que substituem a reescrita
+anterior ("HTML + CSS próprio + JS vanilla" genérico) como **o protótipo
+definitivo**: `01-dashboard.html`, `02-import-disco.html`,
+`03-route-card-states.html`, `04-modal-add-postcode.html`,
+`05-modal-special-deliveries.html`, `06-modal-all-stops.html`,
+`07-modal-rebalance-preview.html`, `08-modal-add-flex-route.html`. Cada
+arquivo é autocontido (CSS + JS inline, tokens light/dark em `:root`) e
+reproduz um frame do Figma como página inteira — os modais (04–08) trazem o
+dashboard renderizado ao fundo com overlay, não um componente de diálogo
+reutilizável.
+
+Movidos para `web/` no lugar da reescrita anterior (removida). Adicionada
+navegação mínima a partir do dashboard para as páginas com destino óbvio
+(Importar, Add New Flex Rote, Special Deliveries, See All Stops, Rebalance) —
+ver `README.md`, seção "Navegação ligada". Corrigido `text-decoration:none`
+na regra `.btn` compartilhada nas 8 páginas (faltava para os `<a class="btn">`
+que o próprio design já usava em Cancel/Add/Confirm, deixando esses botões
+sublinhados).
+
+A divergência de governança sobre a DR-GDS-001 registrada na atualização
+anterior permanece idêntica — trocar o formato de HTML genérico por HTML
+página-por-frame não muda a natureza da divergência (ainda não é
+React/Vite/Tailwind/Radix).
+
+**Não verificado nesta rodada:** `04-modal-add-postcode.html` não tem entrada
+a partir do dashboard (nenhum botão "Add Post Code" existe nesta versão do
+toolbar); `03-route-card-states.html` é sheet de referência, fora do fluxo.
+Ambos só abrem por URL direta.
+
+## Atualização — 2026-08-27 (cont.): fidelidade a partir de novos exports (sidebar + tela de import)
+
+O solicitante forneceu mais 4 exports do Figma (`Sidebar`, `Aside - SideNavBar`,
+`Frame 11`, `Main Content Canvas`, cada um com uma variante `-1`; `Frame 11`/
+`Frame 11-1` e `Sidebar`/`Sidebar-1` eram duplicatas byte-a-byte). Dois ajustes
+de fidelidade feitos a partir deles:
+
+- Sidebar: rótulo "W29 Terminal" adicionado sob o logo "LOGIX / SPHERE" em
+  todas as 8 páginas (markup do `<aside class="sidebar">` é idêntico nas 8,
+  faltava esse detalhe em todas).
+- `02-import-disco.html`: o estado "processado" da tela de import mostrava um
+  mock genérico ("State 2 · Extracted demands by route" com 4 cartões A01–A04)
+  em vez das três tabelas reais já especificadas no handoff (ver atualização
+  de 2026-08-26 "exports reais do Figma"): **PRE-12** (Postal Code/Name/
+  Address), **Análise de Postcodes** (Subpostcode/Total de Deliveries) e
+  **Analise_Size_Class** (Subpostcode/Soma Phys./Total Pieces/Total Shipments/
+  COY/COY-S1/COY-S2/FLY/NCY/PAL 1/Total) — reconstruído com os dados exatos do
+  export (`Main Content Canvas-1.png`). Também corrigidos: texto do dropzone
+  ("Drag the DISCO Excel file here" + linha "FORMATS: .XLSX, .XLS, .XLSM"),
+  cartão de arquivo selecionado (nome/tamanho centralizados + ícone de lixeira,
+  substituindo o dropzone em vez de conviver com ele), e o rodapé com botão
+  "Voltar" (link para o dashboard) + botão de ação que muda de "Process →"
+  (desabilitado até selecionar arquivo) para "Go to Balance →" (navega para
+  `01-dashboard.html`) após processar — antes o botão "Process File" ficava
+  fixo abaixo do dropzone e não tinha estado desabilitado nem navegação de
+  saída. Validado navegando o fluxo completo no navegador (seleção → process
+  → tabelas → Go to Balance → dashboard).
+
+Ambos os ajustes ficam sob a mesma divergência de governança da DR-GDS-001 já
+registrada acima (HTML estático, não React/Vite/Tailwind/Radix) — sem mudança
+de escopo além disso.
+
+## Atualização — 2026-08-27 (cont.): toggle manual de tema (white mode)
+
+A pedido do solicitante ("adicione o white mode, reveja, pois tem blocos em
+branco"), foi adicionado um botão de alternância de tema (☀/☾) no topbar das
+8 páginas, ao lado do relógio. Antes, o tema claro/escuro dependia só da
+preferência do sistema operacional (`prefers-color-scheme`), sem controle
+manual — a paleta clara ("white mode") já existia como `:root` padrão, mas só
+aparecia se o SO/navegador do usuário estivesse em modo claro. Agora o clique
+alterna `data-theme` entre `light`/`dark` e persiste a escolha em
+`localStorage` (chave `rb-theme`), com um script inline no `<head>` aplicando
+o valor salvo antes do primeiro paint (evita flash de tema errado). Estado
+persiste entre as 8 páginas por serem mesma origem.
+
+**Sobre os "blocos em branco":** revisão visual das 8 páginas em modo claro
+forçado (via `data-theme="light")`) e em modo escuro (padrão do sistema usado
+nesta sessão) não reproduziu blocos vazios/sem estilo — sidebar, topbar,
+KPIs, cards em todos os estados, os 5 modais e a tela de import (vazia e
+processada) renderizaram com fundo e texto corretos nos dois temas. Não foi
+possível confirmar a causa relatada; se o problema persistir no ambiente do
+solicitante, precisa de print ou página específica para reproduzir.
+
+## Atualização — 2026-08-27 (cont.): acesso direto ao Figma via MCP + nona página (Shipment Details)
+
+Instalado o plugin `figma@claude-plugins-official` e o servidor MCP
+`figma` (`https://mcp.figma.com/mcp`, scope user) a pedido do solicitante.
+Com acesso de editor liberado no arquivo `Route-Balance--Copy-`
+(`LhKS6kSzY2ZxtnsKqOSHFN`), foi possível abrir a página "Doing" diretamente
+pelo MCP (`node-id=87-2`) em vez de depender de exports manuais em PNG.
+
+Comparando os grupos dessa página com os 8 arquivos existentes: **Rebalance**,
+**Add flex route**, **All Stops**, **Import**, **Add Post Code** e
+**Special Deliveries** já batem com o protótipo. Achado um grupo sem
+implementação correspondente — **"Shipment Details / Route A-01"**
+(node `132:8781`) — modal com Route ID/Driver/Vehicle, Total Stops,
+Deliveries/Pickups, Completion (badge %), Total Pieces, Soma Phys (KG), Total
+Shipments, e uma tabela "Shipment Breakdown by Type" com indicadores especiais
+(Pre-12/ASR/DSR) e linhas por tipo (COY/COY-S1/COY-S2/FLY/NCY/PAL1). Confirmado
+com o solicitante antes de construir.
+
+Criado `09-modal-shipment-details.html` seguindo exatamente o padrão dos
+outros 8 arquivos (mesmos tokens `:root`, mesmo shell sidebar+topbar, mesmo
+toggle de tema). Sem `modal-foot` — o frame do Figma não tem botões de ação,
+só o X de fechar. Ligado a partir do dashboard: o ícone `⚲` do cabeçalho do
+route card (que antes não tinha destino/função) agora é um link para essa
+página — **decisão do steward, não confirmada no Figma**, já que nenhum
+botão explícito de "ver detalhes" foi encontrado ligado a esse modal; revisar
+com Design se o ponto de entrada correto é outro. Adicionado
+`text-decoration:none` a `.icon-btn` nas 9 páginas para suportar esse uso
+como link (antes só era usado em `<button>`).
+
+**Novos achados não implementados (fora do escopo confirmado nesta rodada):**
+o toolbar do dashboard no Figma (`132:8709`) tem dois botões que não existem
+no `01-dashboard.html` atual — **"Add Post Code"** (que resolveria a lacuna já
+registrada acima de `04-modal-add-postcode.html` não ter entrada a partir do
+dashboard) e **"PM ASR/ DSR Listinig"** [sic, typo no Figma]. Não implementados
+nesta rodada; ambos precisam de confirmação do solicitante antes de entrar.
+
+## Atualização — 2026-08-27 (cont.): responsividade + interações reais no dashboard
+
+A pedido do solicitante ("adapte para o tamanho da tela e adicione as
+funções, deixe a page com as cores originais"), confirmado por ele que o
+escopo é as 9 páginas e que nenhuma cor/token muda — só layout e
+comportamento.
+
+**Responsividade (9 páginas):**
+- `.kpi-grid` e `.card-grid` trocados de `repeat(4,1fr)` fixo para
+  `repeat(auto-fit/auto-fill,minmax(Npx,1fr))` — reflow fluido sem depender
+  de breakpoints manuais. Removida a largura fixa `width:280px` de
+  `.route-card` (o grid já controla a largura da célula).
+- Sidebar vira barra horizontal abaixo de 860px (logo + nav item lado a
+  lado, esconde subtítulo "W29 Terminal" e o rodapé Support/System Status);
+  `.shell` muda para `flex-direction:column`.
+- Abaixo de 560px: busca do topbar e relógio somem, título encolhe, campo de
+  busca de rotas e `.head-controls` ocupam 100%, botões do `.btn-row` viram
+  flex igual.
+- `09-modal-shipment-details.html`: `.detail-row` empilha em coluna abaixo de
+  480px (era 2 colunas fixas, quebrava em telas muito estreitas).
+- Tabelas largas (`Analise_Size_Class` em `02-import-disco.html`, breakdown
+  por tipo em `09`, PRE-12) envolvidas em `.table-scroll` (`overflow-x:auto`)
+  para não estourar a largura da tela; tabelas já com scroll vertical
+  (`05`/`06`) ganharam scroll horizontal também.
+- Validado com um iframe injetado via devtools simulando 390×844 (viewport
+  de celular) — sidebar colapsa, KPIs e cards empilham em 1 coluna, nenhum
+  overflow horizontal.
+- **Bug pego e corrigido antes de finalizar:** ao remover o
+  `style="display:grid;grid-template-columns:repeat(4,280px);gap:16px;"`
+  inline dos 4 route cards "de fundo" atrás dos modais (04–09), a `<div>`
+  que os envolve tinha ficado **sem nenhuma classe de grid** — esses arquivos
+  nunca usavam `class="card-grid"` ali, só o inline style. Corrigido
+  adicionando `class="card-grid"` nessa div nos 6 arquivos afetados
+  (04, 05, 06, 07, 08, 09); confirmado visualmente em 04 e 09 que os 4 cards
+  voltaram a ficar lado a lado.
+
+**Funções ativadas (apenas `01-dashboard.html` — os outros 8 arquivos
+mostram os mesmos controles só como fundo estático atrás de um modal aberto,
+fora de foco, então não foram ligados):**
+- **AM/PM** (`.seg`): estado real, alterna `aria-pressed` e atualiza o chip
+  de turno em todos os cards. Como o mock não tem dois conjuntos de rotas
+  separados por turno, cada rota recebeu um `shift` fixo alternado
+  (AM/PM/AM/PM…) só para a busca e o toggle terem algo determinístico para
+  mostrar — trocar o turno reatribui `shift` a todas e re-renderiza.
+- **Rebalance / Operations**: toggle mutuamente exclusivo real. "Rebalance"
+  filtra a grade para mostrar só as rotas com ≥100% (as que puxam
+  rebalanceamento); "Operations" (padrão) mostra todas as 8. Não mexe nos
+  KPIs do topo (ficariam desalinhados com o filtro se este fosse um dado
+  real — assumido como limitação aceitável de protótipo).
+- **Colapse Routes**: colapsa todos os cards expandidos de uma vez; se todos
+  já estiverem colapsados, vira "Expand Routes" e expande todos. Rótulo do
+  botão muda dinamicamente.
+- **Search routes**: filtro real por texto (nome do motorista, placa, rótulo
+  da rota) contra os cards visíveis; mostra aviso "Nenhuma rota corresponde
+  ao filtro atual." quando zera a lista.
+- **Add Post Code**: botão que faltava (achado na rodada anterior) adicionado
+  ao `.btn-row`, linkando para `04-modal-add-postcode.html`. **"PM ASR/DSR
+  Listing" continua não implementado** — não fazia parte da descrição de
+  escopo que o solicitante confirmou.
+
+Sem mudança de paleta/tokens em nenhum arquivo — só `grid-template-columns`,
+media queries novas, `overflow-x`, e os `<script>` de interação do dashboard.
