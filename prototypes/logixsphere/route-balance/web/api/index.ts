@@ -7,6 +7,7 @@ import {
   computeKpis,
   drivers,
   getAsrDsrRows,
+  getSpecialDeliveries,
   getStopsSummary,
   routes,
 } from './_lib/data.js'
@@ -36,6 +37,12 @@ app.get('/api/postcodes', (_req, res) => {
 
 app.get('/api/asr-dsr-listing', (_req, res) => {
   res.json(getAsrDsrRows())
+})
+
+app.get('/api/routes/:id/special-deliveries', (req, res) => {
+  const route = routes.find((r) => r.id === req.params.id)
+  if (!route) return res.status(404).json({ error: 'Rota não encontrada' })
+  res.json(getSpecialDeliveries(route))
 })
 
 app.get('/api/routes/:id/stops', (req, res) => {
@@ -136,6 +143,7 @@ app.post('/api/routes', (req, res) => {
     preNoon: 0,
     targetPercent: 0,
     totalWeightKg: 0,
+    specialDelivery: false,
     subpostcodes: [],
     stops: [],
   }

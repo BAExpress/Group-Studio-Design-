@@ -87,3 +87,63 @@ board Doing (grupos de exploração sem nome, cópias duplicadas do dashboard)
 foi identificado como ruído de WIP e não foi replicado. Dados mock
 estendidos (stops por rota, postcodes, veículo/peso) seguem a mesma
 convenção de aproximação plausível já registrada acima.
+
+## Atualização — 2026-08-26: ajuste fino a partir de screenshot do Figma
+
+O solicitante enviou um screenshot com 3 frames da página Doing mostrando
+detalhes que a exploração anterior não tinha capturado, e pediu para
+"continuar com essas pages". Ajustes feitos: barra lateral esquerda
+(sidebar nav), Import redesenhado como layout de 2 colunas com tabelas
+reorganizadas por postcode/subpostcode (Pre-12 por endereço, Postcode
+Analysis, Size Class com colunas COY/COY-01/COY-02/PLY/NCY/PAL 1 — jargão
+de logística sem definição exata no handoff, distribuição aproximada
+sinalizada no código), placa de veículo e badge "Special Deliveries" no
+route card, KPI "Target" com faixa-meta (95%–105%) substituindo "Delayed
+Service Rate", toast de sucesso, botão "Importar" no dashboard (volta ao
+fluxo de import) e ação "Send to Drivers" (nova, distinta de "Send to
+Rebalance"). Também corrigido: nome de cliente não capturado do arquivo
+importado quando a coluna se chama "Customer" (regex do parser não cobria
+esse termo). Adicionado `web/api/check:api` (typecheck dedicado à pasta
+`api/`) depois do bug de import path que passou despercebido no build local
+na rodada anterior — não deve se repetir.
+
+## Atualização — 2026-08-26: "continue com TODAS AS PAGINAS"
+
+Voltei ao Figma (arquivo renomeado de "Logix Sphere" para "Route Balance"
+pelo time enquanto esta tarefa estava em andamento — confirma edição ativa
+por outra pessoa, sem impacto no acesso) e explorei anotações ainda não
+lidas na página Doing. Encontrado: badge "Special Deliveries" é na verdade
+um botão clicável que abre um modal com tabela Postcode/Customer/Category
+(implementado), toggle de turno AM/PM e toggle de modo Rebalance/Operations
+na toolbar (implementados como filtros funcionais da grade de rotas), e o
+rótulo correto do 3º KPI é "SPR" (não "Address Advice Rate", que era um
+palpite da rodada anterior — corrigido). Ícones por KPI e badge "ALERT"
+também ajustados por fidelidade. Ainda não explorados: alguns "Group N"
+sem nome no board Doing — mantida a avaliação anterior de que são
+ruído/exploração, não telas reais, mas não 100% verificado grupo a grupo.
+
+## Atualização — 2026-08-26: exports reais do Figma (pasta local)
+
+O solicitante exportou 15 frames direto do Figma (`~/Downloads/Route
+Balance/`, JPG/PNG em alta resolução) e pediu para copiar todas as pages
+dessa pasta. Isso corrigiu várias leituras erradas de rodadas anteriores
+(feitas sobre o viewer sem login, em baixa resolução):
+- KPI 3 e 4 são de fato **"Archived Service Rate"** e **"Dalayed Service
+  Rate"** (sic — typo "Dalayed" no próprio Figma, mantido por fidelidade;
+  sinalizar para Design). O tile "Target" da rodada anterior era leitura
+  errada de um frame borrado — revertido.
+- Colunas de Size Class corrigidas: **"Soma Phys."** (não "Sigma"),
+  **"COY-S1"/"COY-S2"** (não "COY-01/02"), **"FLY"** (não "PLY").
+- O campo "Select_Route [opt]" do modal Add_Postcode é um combobox
+  multi-select com **chips removíveis** dentro do próprio campo — não uma
+  lista de checkboxes abaixo do campo, como eu tinha construído antes.
+  Reconstruído para bater com o Figma.
+- Import: painel direito vazio agora usa a cópia exata do Figma ("Process
+  a file to preview..."), dropzone ganhou a linha "FORMATS: .XLSX, .XLS,
+  .XLSM", cartão do arquivo selecionado virou centralizado (ícone/nome/
+  tamanho/lixeira empilhados), e o botão do rodapé mostra "Process →"
+  (desabilitado) antes de processar e "Go to Balance →" depois.
+- A camada "Exemplos de uma grande quantidade de seleção" que eu tinha
+  descartado como ruído era, na verdade, um teste de QA do campo de chips
+  com muitas seleções — não é uma tela nova, só confirma o comportamento
+  do combobox acima.

@@ -23,6 +23,7 @@ export type Route = {
   preNoon: number
   targetPercent: number
   totalWeightKg: number
+  specialDelivery: boolean
   subpostcodes: SubpostcodeRow[]
   stops: Stop[]
 }
@@ -86,7 +87,7 @@ export const routes: Route[] = [
     id: 'route-a01',
     code: 'ROUTE A-01',
     driver: 'Carlos Silva',
-    vehicle: 'CAR-001',
+    vehicle: 'YF25 OZL',
     shift: 'AM',
     status: 'pending',
     capacityState: 'default',
@@ -97,6 +98,7 @@ export const routes: Route[] = [
     preNoon: 2,
     targetPercent: 92,
     totalWeightKg: 1842.3,
+    specialDelivery: true,
     subpostcodes: [
       { code: 'ME1', del: 2, pu: 1, total: 3 },
       { code: 'ME2', del: 1, pu: 4, total: 5 },
@@ -107,7 +109,7 @@ export const routes: Route[] = [
     id: 'route-a02',
     code: 'ROUTE A-02',
     driver: 'Marina Costa',
-    vehicle: 'CAR-002',
+    vehicle: 'MC18 TRK',
     shift: 'AM',
     status: 'validated',
     capacityState: 'default',
@@ -118,6 +120,7 @@ export const routes: Route[] = [
     preNoon: 5,
     targetPercent: 95,
     totalWeightKg: 2210.8,
+    specialDelivery: false,
     subpostcodes: [
       { code: 'ME3', del: 3, pu: 0, total: 3 },
       { code: 'ME4', del: 2, pu: 1, total: 3 },
@@ -128,7 +131,7 @@ export const routes: Route[] = [
     id: 'route-a03',
     code: 'ROUTE A-03',
     driver: 'Rafael Nunes',
-    vehicle: 'CAR-003',
+    vehicle: 'RN22 LGX',
     shift: 'PM',
     status: 'pending',
     capacityState: 'default',
@@ -139,6 +142,7 @@ export const routes: Route[] = [
     preNoon: 1,
     targetPercent: 70,
     totalWeightKg: 1390.5,
+    specialDelivery: false,
     subpostcodes: [{ code: 'ME7', del: 5, pu: 4, total: 9 }],
     stops: buildStops('ME7', 5, 145),
   },
@@ -146,7 +150,7 @@ export const routes: Route[] = [
     id: 'route-a04',
     code: 'ROUTE A-04',
     driver: 'Juliana Alves',
-    vehicle: 'CAR-004',
+    vehicle: 'JA09 FLX',
     shift: 'AM',
     status: 'pending',
     capacityState: 'rebalance',
@@ -157,6 +161,7 @@ export const routes: Route[] = [
     preNoon: 3,
     targetPercent: 100,
     totalWeightKg: 2635.0,
+    specialDelivery: false,
     subpostcodes: [
       { code: 'ME5', del: 2, pu: 0, total: 2 },
       { code: 'ME6', del: 2, pu: 2, total: 4 },
@@ -167,7 +172,7 @@ export const routes: Route[] = [
     id: 'route-a05',
     code: 'ROUTE A-05',
     driver: 'Pedro Lima',
-    vehicle: 'CAR-005',
+    vehicle: 'PL31 RTE',
     shift: 'PM',
     status: 'validated',
     capacityState: 'default',
@@ -178,6 +183,7 @@ export const routes: Route[] = [
     preNoon: 4,
     targetPercent: 90,
     totalWeightKg: 1978.2,
+    specialDelivery: true,
     subpostcodes: [{ code: 'ME8', del: 4, pu: 1, total: 5 }],
     stops: buildStops('ME8', 6, 700),
   },
@@ -185,7 +191,7 @@ export const routes: Route[] = [
     id: 'route-a06',
     code: 'ROUTE A-06',
     driver: 'Fernanda Dias',
-    vehicle: 'CAR-006',
+    vehicle: 'FD14 VAN',
     shift: 'AM',
     status: 'pending',
     capacityState: 'default',
@@ -196,6 +202,7 @@ export const routes: Route[] = [
     preNoon: 0,
     targetPercent: 58,
     totalWeightKg: 987.6,
+    specialDelivery: false,
     subpostcodes: [{ code: 'ME9', del: 3, pu: 2, total: 5 }],
     stops: buildStops('ME9', 4, 210),
   },
@@ -203,7 +210,7 @@ export const routes: Route[] = [
     id: 'route-a07',
     code: 'ROUTE A-07',
     driver: 'Bruno Teixeira',
-    vehicle: 'CAR-007',
+    vehicle: 'BT27 HGV',
     shift: 'PM',
     status: 'pending',
     capacityState: 'default',
@@ -214,6 +221,7 @@ export const routes: Route[] = [
     preNoon: 2,
     targetPercent: 63,
     totalWeightKg: 1654.9,
+    specialDelivery: false,
     subpostcodes: [{ code: 'ME10', del: 6, pu: 0, total: 6 }],
     stops: buildStops('ME10', 5, 340),
   },
@@ -221,7 +229,7 @@ export const routes: Route[] = [
     id: 'route-a08',
     code: 'ROUTE A-08',
     driver: 'Camila Rocha',
-    vehicle: 'CAR-008',
+    vehicle: 'CR05 SPH',
     shift: 'AM',
     status: 'validated',
     capacityState: 'default',
@@ -232,6 +240,7 @@ export const routes: Route[] = [
     preNoon: 3,
     targetPercent: 96,
     totalWeightKg: 2087.4,
+    specialDelivery: false,
     subpostcodes: [{ code: 'ME11', del: 5, pu: 1, total: 6 }],
     stops: buildStops('ME11', 6, 880),
   },
@@ -253,25 +262,35 @@ export function computeKpis(): Kpi[] {
   const stopsTotal = routes.reduce((sum, r) => sum + r.stopsTotal, 0)
   const preDeliveries = routes.reduce((sum, r) => sum + r.preNoon, 0)
   const addressAdvice = Math.round(stopsTotal * 0.88)
-  const delayed = routes.filter((r) => r.capacityState === 'rebalance').length * 11
+  const hasRebalanceFlag = routes.some((r) => r.capacityState === 'rebalance')
+  const delayed = hasRebalanceFlag ? Math.round(stopsTotal * 0.87) : 0
 
   return [
-    { id: 'total-stops', label: 'Total Stops', value: String(stopsTotal), delta: '+4.2%' },
+    {
+      id: 'total-stops',
+      label: 'Total Stops',
+      value: String(stopsTotal),
+      delta: '+4.2%',
+      sublabel: `${routes.length} routes`,
+    },
     {
       id: 'pre-deliveries',
-      label: 'Pre-Deliveries',
+      label: 'Pré Deliveries',
       value: String(preDeliveries),
       sublabel: `${Math.round((preDeliveries / stopsTotal) * 100)}% of stops`,
     },
     {
-      id: 'address-advice-rate',
-      label: 'Address Advice Rate',
+      // Rótulo exato do frame exportado do Figma (Group export, 2026-08-26).
+      id: 'archived-service-rate',
+      label: 'Archived Service Rate',
       value: String(addressAdvice),
       sublabel: `${Math.round((addressAdvice / stopsTotal) * 100)}% of stops`,
     },
     {
+      // "Dalayed" (sic) — typo presente no próprio frame do Figma, mantido
+      // por fidelidade; sinalizar para Design antes de promover.
       id: 'delayed-service-rate',
-      label: 'Delayed Service Rate',
+      label: 'Dalayed Service Rate',
       value: String(delayed),
       sublabel: `${Math.round((delayed / stopsTotal) * 100)}% of stops`,
       alert: delayed > 0,
@@ -292,6 +311,12 @@ export function getAsrDsrRows() {
         status: s.status,
       })),
   )
+}
+
+export function getSpecialDeliveries(route: Route) {
+  return route.stops
+    .filter((s) => s.category === 'ASR' || s.category === 'DSR')
+    .map((s) => ({ postcode: s.postcode, customer: s.customer, category: s.category }))
 }
 
 export function getStopsSummary(route: Route) {

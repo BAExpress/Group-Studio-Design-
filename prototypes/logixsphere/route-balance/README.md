@@ -34,6 +34,19 @@ explícito no terminal. Duas opções:
    cd /tmp/rb-deploy-stage && npx vercel deploy --prod --yes
    ```
 
+## Navegação
+
+`web/src/App.tsx` usa `react-router-dom` (`BrowserRouter`) com duas rotas
+reais — `/import` e `/dashboard` (raiz redireciona para `/import`) — em vez
+de troca de estado interna. Back/forward do navegador e reload direto em
+qualquer uma das duas URLs funcionam; a sidebar (`SidebarNav`) e o toolbar
+navegam via `useNavigate`/`NavLink`. `web/vercel.json` tem um rewrite
+catch-all para `index.html` (fora de `/api`) para o reload direto funcionar
+também na versão publicada. Os demais "sub-fluxos" (All Stops, Shipment
+Details, Add Post Code, PM ASR/DSR Listing, Special Deliveries, Send to
+Rebalance/Drivers) continuam como modais sobre `/dashboard`, não como rotas
+próprias — não têm URL própria no Figma, então não ganharam uma aqui.
+
 ## Rodando localmente
 
 ```bash

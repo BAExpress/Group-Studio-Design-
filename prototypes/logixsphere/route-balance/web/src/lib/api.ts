@@ -7,6 +7,7 @@ import type {
   Route,
   SendToRebalanceResult,
   ShipmentDetails,
+  SpecialDeliveryRow,
   StopsSummary,
 } from '@/types'
 
@@ -29,6 +30,8 @@ export const api = {
   getPostcodes: () => request<string[]>('/postcodes'),
   getAsrDsrListing: () => request<AsrDsrRow[]>('/asr-dsr-listing'),
   getStops: (routeId: string) => request<StopsSummary>(`/routes/${routeId}/stops`),
+  getSpecialDeliveries: (routeId: string) =>
+    request<SpecialDeliveryRow[]>(`/routes/${routeId}/special-deliveries`),
   getShipmentDetails: (routeId: string) =>
     request<ShipmentDetails>(`/routes/${routeId}/shipment-details`),
   addPostcodes: (routeId: string, postcodes: string[]) =>

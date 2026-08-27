@@ -1,9 +1,8 @@
-import { Minus, Plus } from 'lucide-react'
+import { Check, CheckCircle2, MapPin, Minus, Plus, Split } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import type { Route } from '@/types'
 
@@ -13,6 +12,7 @@ export function RouteCard({
   onValidate,
   onSeeDetails,
   onSeeAllStops,
+  onSpecialDeliveries,
   collapseSignal,
 }: {
   route: Route
@@ -20,71 +20,74 @@ export function RouteCard({
   onValidate: (route: Route) => void
   onSeeDetails: (route: Route) => void
   onSeeAllStops: (route: Route) => void
+  onSpecialDeliveries: (route: Route) => void
   collapseSignal: number
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [selected, setSelected] = useState(false)
 
   useEffect(() => {
     setExpanded(false)
   }, [collapseSignal])
+
   const percent =
-    route.stopsTotal === 0
-      ? 0
-      : Math.round((route.stopsDone / route.stopsTotal) * 100)
+    route.stopsTotal === 0 ? 0 : Math.round((route.stopsDone / route.stopsTotal) * 100)
   const isOverCapacity = route.capacityState === 'rebalance'
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-3 rounded-md border bg-surface p-3',
-        isOverCapacity ? 'border-error' : 'border-outline-variant',
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-            <span>{route.code}</span>
-            <span>·</span>
-            <span>MANIFEST</span>
-          </div>
-          <div className="font-display text-lg font-bold leading-tight">
-            {route.driver}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded-sm border',
-            expanded
-              ? 'border-outline bg-surface-variant'
-              : 'border-outline text-primary',
-          )}
-          aria-label={expanded ? 'Recolher' : 'Expandir'}
+    <div className="flex flex-col rounded-md border border-on-surface bg-background p-3">
+      <div className="flex items-center gap-2">
+        <IconToggle
+          label={selected ? 'Desmarcar rota' : 'Marcar rota'}
+          pressed={selected}
+          onClick={() => setSelected((v) => !v)}
         >
-          {expanded ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
-        </button>
+          <Check className="size-4" />
+        </IconToggle>
+        <IconToggle label="Ver todas as paradas" onClick={() => onSeeAllStops(route)}>
+          <MapPin className="size-4" />
+        </IconToggle>
       </div>
 
-      <div className="flex items-center gap-1.5">
-        <Badge variant="neutral">{route.shift}</Badge>
+      <div className="mt-3 flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
+        <span>{route.code}</span>
+        <span>•</span>
+        <span>Manifest</span>
+      </div>
+      <div className="font-display text-xl font-bold leading-tight">{route.driver}</div>
+
+      <div className="mt-2 flex items-center gap-1.5">
+        <Badge variant="neutral" className="border border-outline">
+          {route.shift}
+        </Badge>
         <Badge variant={route.status === 'validated' ? 'validated' : 'pending'}>
-          {route.status === 'validated' ? 'VALIDATED' : 'PENDING'}
+          {route.status === 'validated' ? 'Validated' : 'Pending'}
         </Badge>
       </div>
 
-      <div>
-        <Progress
-          value={percent}
-          indicatorClassName={isOverCapacity ? 'bg-error' : undefined}
-        />
-        <div className="mt-1 font-mono text-[11px] text-on-surface-variant">
+      <div className="mt-3 rounded-sm border border-outline-variant bg-surface-variant/25 px-3 py-2.5">
+        <div className="font-mono text-[11px] tracking-wide text-on-surface">
           {route.stopsDone} / {route.stopsTotal} STOPS ({percent}%)
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-variant">
+          <div
+            className={cn('h-full rounded-full', isOverCapacity ? 'bg-error' : 'bg-primary')}
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
 
       {expanded && (
-        <div className="flex flex-col gap-2 rounded-sm border border-outline-variant bg-background/60 p-2">
+        <div className="mt-3 flex flex-col gap-2 rounded-sm border border-outline-variant bg-surface/60 p-2">
+          {route.specialDelivery && (
+            <button
+              type="button"
+              onClick={() => onSpecialDeliveries(route)}
+              className="rounded-sm bg-secondary-container px-2 py-1 text-center font-mono text-[10px] font-bold uppercase tracking-wider text-on-secondary-container hover:brightness-95"
+            >
+              Special Deliveries
+            </button>
+          )}
           <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
             Subpostcode Del / PU Total
           </div>
@@ -124,34 +127,80 @@ export function RouteCard({
             <MiniStat label="Pre 12h" value={route.preNoon} />
           </div>
           <div className="flex items-center justify-between font-mono text-[11px]">
+            <span className="text-on-surface-variant">Veículo</span>
+            <span className="font-bold">{route.vehicle}</span>
+          </div>
+          <div className="flex items-center justify-between font-mono text-[11px]">
             <span className="text-on-surface-variant">Target</span>
             <span className="font-bold">{route.targetPercent}%</span>
           </div>
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="mt-3 flex justify-end border-t border-outline-variant/50 pt-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? 'Recolher rota' : 'Expandir rota'}
+          aria-expanded={expanded}
+          className="flex size-6 items-center justify-center rounded-sm bg-primary-bright text-on-primary-container hover:brightness-95"
+        >
+          {expanded ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
+        </button>
+      </div>
+
+      <div className="border-t border-outline-variant/50 pt-3">
         {isOverCapacity ? (
           <Button
-            variant="destructive"
+            variant="secondary"
             size="sm"
-            className="flex-1"
+            className="h-8 w-full bg-background"
             onClick={() => onRebalance(route)}
           >
-            Rebalance
+            <Split /> Rebalance
           </Button>
         ) : (
           <Button
+            variant="lime"
             size="sm"
-            className="flex-1"
+            className="h-8 w-full"
             disabled={route.status === 'validated'}
             onClick={() => onValidate(route)}
           >
-            {route.status === 'validated' ? 'Validated' : 'Validate'}
+            <CheckCircle2 /> {route.status === 'validated' ? 'Validated' : 'Validate'}
           </Button>
         )}
       </div>
     </div>
+  )
+}
+
+function IconToggle({
+  label,
+  pressed,
+  onClick,
+  children,
+}: {
+  label: string
+  pressed?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={cn(
+        'flex size-7 items-center justify-center rounded-sm border border-outline',
+        pressed
+          ? 'bg-primary-bright text-on-primary-container'
+          : 'bg-background text-on-surface hover:bg-surface-variant/50',
+      )}
+    >
+      {children}
+    </button>
   )
 }
 

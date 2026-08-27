@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { Check, ChevronDown, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import type { Route } from '@/types'
 
 export function AddPostcodeDialog({
@@ -36,18 +38,31 @@ export function AddPostcodeDialog({
   const [routeId, setRouteId] = useState(defaultRouteId ?? routes[0]?.id ?? '')
   const [postcodes, setPostcodes] = useState<string[]>([])
   const [selected, setSelected] = useState<string[]>([])
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (open) {
       setRouteId(defaultRouteId ?? routes[0]?.id ?? '')
       setSelected([])
+      setPickerOpen(false)
       setError(null)
       api.getPostcodes().then(setPostcodes)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultRouteId])
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   function toggle(code: string) {
     setSelected((prev) =>
@@ -81,7 +96,7 @@ export function AddPostcodeDialog({
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="postcode-route">Route name</Label>
+            <Label htmlFor="postcode-route">Code_Input</Label>
             <Select value={routeId} onValueChange={setRouteId}>
               <SelectTrigger id="postcode-route">
                 <SelectValue placeholder="Selecione a rota" />
@@ -95,25 +110,61 @@ export function AddPostcodeDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Select_Maps (all_postcode)</Label>
-            <div className="max-h-48 overflow-y-auto rounded-sm border border-outline-variant">
-              {postcodes.map((code) => (
-                <label
-                  key={code}
-                  className="flex items-center gap-2 border-b border-outline-variant px-2 py-1.5 font-mono text-xs last:border-b-0 hover:bg-surface-variant"
+
+          <div ref={pickerRef} className="relative flex flex-col gap-1.5">
+            <Label>Select_Route [opt]</Label>
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-outline bg-surface px-2 py-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {selected.length === 0 ? (
+                <span className="font-mono text-xs text-on-surface-variant">ALL_POSTCODES</span>
+              ) : (
+                selected.map((code) => (
+                  <span
+                    key={code}
+                    className="flex items-center gap-1 rounded-sm bg-surface-variant px-1.5 py-0.5 font-mono text-[11px] text-on-surface-variant"
+                  >
+                    {code}
+                    <X
+                      className="size-3 hover:text-error"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggle(code)
+                      }}
+                    />
+                  </span>
+                ))
+              )}
+              <ChevronDown className="ml-auto size-4 shrink-0 text-on-surface-variant" />
+            </button>
+
+            {pickerOpen && (
+              <div className="absolute top-full z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-sm border border-outline-variant bg-surface shadow-md">
+                <button
+                  type="button"
+                  onClick={() => setSelected([])}
+                  className="flex w-full items-center gap-2 px-2 py-1.5 text-left font-mono text-xs hover:bg-surface-variant"
                 >
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(code)}
-                    onChange={() => toggle(code)}
-                    className="accent-primary"
-                  />
-                  {code}
-                </label>
-              ))}
-            </div>
+                  <Check className={cn('size-3.5', selected.length > 0 && 'invisible')} />
+                  ALL_POSTCODES
+                </button>
+                {postcodes.map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => toggle(code)}
+                    className="flex w-full items-center gap-2 px-2 py-1.5 text-left font-mono text-xs hover:bg-surface-variant"
+                  >
+                    <Check className={cn('size-3.5', !selected.includes(code) && 'invisible')} />
+                    {code}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
           {error && <p className="font-mono text-[11px] text-error">{error}</p>}
         </DialogBody>
         <DialogFooter>
@@ -121,7 +172,7 @@ export function AddPostcodeDialog({
             Cancel
           </Button>
           <Button size="sm" disabled={saving} onClick={handleSave}>
-            {saving ? 'Salvando…' : 'OK'}
+            {saving ? 'Salvando…' : 'Add'}
           </Button>
         </DialogFooter>
       </DialogContent>

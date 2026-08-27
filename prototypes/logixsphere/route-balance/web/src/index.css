@@ -22,6 +22,9 @@
   --color-primary: #446900;
   --color-on-primary: #ffffff;
   --color-primary-container: #c6f089;
+  /* Lime dos botões de ação do Route Balance (Validate, +, Add New Flex Route).
+     Amostrado dos exports do Figma — confirmar com Aline antes de promover. */
+  --color-primary-bright: #a3e636;
   --color-on-primary-container: #101f00;
 
   --color-secondary: #27676c;

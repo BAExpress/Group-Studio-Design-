@@ -33,6 +33,7 @@ export type Route = {
   preNoon: number
   targetPercent: number
   totalWeightKg: number
+  specialDelivery: boolean
   subpostcodes: SubpostcodeRow[]
 }
 
@@ -41,15 +42,26 @@ export type Driver = {
   name: string
 }
 
-export type ImportedShipment = {
-  routeCode: string
-  weightKg: number
-  pieces: number
-  stops: number
+export type DemandRow = { postcode: string; name: string; address: string }
+export type PostcodeTotal = { subpostcode: string; totalDeliveries: number }
+export type SizeClassRow = {
+  subpostcode: string
+  somaPhys: number
+  totalPieces: number
+  totalShipments: number
+  coy: number
+  coyS1: number
+  coyS2: number
+  fly: number
+  ncy: number
+  pal1: number
+  total: number
 }
 
 export type ImportResult = {
-  shipments: ImportedShipment[]
+  demands: DemandRow[]
+  postcodeTotals: PostcodeTotal[]
+  sizeClass: SizeClassRow[]
   totalCreated: number
   fileName: string
 }
@@ -82,6 +94,12 @@ export type StopsSummary = {
   dsrCount: number
   noShowCount: number
   stops: Stop[]
+}
+
+export type SpecialDeliveryRow = {
+  postcode: string
+  customer: string
+  category: StopCategory
 }
 
 export type ShipmentDetails = {
