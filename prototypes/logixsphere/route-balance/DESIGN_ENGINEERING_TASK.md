@@ -369,3 +369,182 @@ fora de foco, então não foram ligados):**
 
 Sem mudança de paleta/tokens em nenhum arquivo — só `grid-template-columns`,
 media queries novas, `overflow-x`, e os `<script>` de interação do dashboard.
+
+## Atualização — 2026-08-27 (cont.): migração de volta para React (resolve divergência DR-GDS-001)
+
+A pedido do solicitante ("migre agora para react"). Antes de tocar em
+qualquer arquivo, confirmado com ele: (1) commitar o estado atual das 9
+páginas HTML (responsivo + funções) antes de migrar — feito no commit
+`d366835`; (2) construir os componentes React do zero a partir da fidelidade
+de hoje, **não** a partir do branch `react/route-balance-doing` (que é de
+antes da reconstrução das 9 páginas — rótulos de KPI errados, sem Shipment
+Details, sem responsividade/funções).
+
+**O que foi reaproveitado do histórico do próprio branch** (não do branch
+`react/route-balance-doing`, que ficou intocado): o commit `c9dad2a`
+(imediatamente anterior à reescrita HTML) já tinha um scaffold Vite+React+TS+
+Tailwind4+Radix funcional que foi deletado na virada para HTML. Reaproveitado
+como infraestrutura genérica — `package.json`, `vite.config.ts`,
+`tsconfig*.json`, `src/lib/utils.ts` e os primitivos `src/components/ui/`
+(Button, Dialog, Badge, Progress, Select, Input, Label), que são wrappers
+Radix agnósticos de conteúdo. **Todo o resto foi escrito do zero**: paleta de
+cores (`src/index.css`, ver abaixo), dados mock (`src/data/mock.ts`), shell
+(sidebar/topbar/tema), KPI grid, Route Card, e os 6 modais — todos batendo
+com o conteúdo das 9 páginas HTML de hoje, não com as versões antigas do
+scaffold deletado.
+
+**Tokens de cor**: `src/index.css` define as mesmas cores exatas das 9
+páginas HTML (claro E escuro, mesmos hex) via uma camada de indireção
+`--rb-*` (redefinida sob `[data-theme]`/`prefers-color-scheme`, igual ao
+padrão já usado no HTML) mapeada para o `@theme` do Tailwind v4
+(`--color-primary`, `--color-surface` etc., convenção shadcn). Fonte
+(`Space Grotesk`/`IBM Plex Mono` via Google Fonts) idêntica.
+
+**Estrutura**: as 9 páginas HTML viraram 2 rotas reais
+(`/` dashboard, `/import`) + 6 `Dialog` do Radix abertos a partir do
+dashboard (Add Postcode, Add Flex Route, Special Deliveries, All Stops,
+Rebalance Preview, Shipment Details) — não mais páginas HTML inteiras com o
+dashboard duplicado ao fundo. `03-route-card-states.html` (sheet de
+referência do componente, fora do fluxo do app) não foi portado — decisão
+do steward, avisar se precisar recuperar (fica em `git show d366835:...`).
+
+**Bug pego e corrigido antes de finalizar**: a variant `lime` do `Button`
+reaproveitado do scaffold antigo usava `text-on-primary-container` (mapeia
+pra um verde escuro de baixo contraste) em vez de um token próprio para texto
+sobre o lime brilhante — botões "Validate"/"+ Add New Flex Rote"/etc.
+ficavam com texto quase ilegível. Corrigido adicionando
+`--color-on-primary-bright` ao tema e trocando a classe do botão.
+
+**Validado no navegador** (dev server, `npm run build` limpo, `oxlint` sem
+warning novo): claro/escuro, os 6 modais, o fluxo completo de import
+(upload → process → 3 tabelas → Go to Balance → volta pro dashboard via
+client-side routing), toggle AM/PM, filtro Rebalance/Operations, Colapse/
+Expand Routes, e o combobox de postcodes em Add_Postcode — que agora
+**funciona de verdade** (só decorativo na versão HTML).
+
+Removidos os 9 arquivos `.html` de `web/` (preservados no commit `d366835`,
+recuperáveis via `git show d366835:prototypes/logixsphere/route-balance/web/01-dashboard.html`
+etc.). `README.md` e `package.json` da raiz do protótipo atualizados para a
+stack React. `server/` e `web/api/` (mock Express/Vercel da rodada React
+anterior) mantidos sem uso — nenhuma tela atual os consome, dados vêm de
+`src/data/mock.ts`.
+
+Isso **resolve** a divergência de governança da DR-GDS-001 registrada nas
+atualizações anteriores — o protótipo volta a seguir a decisão Accepted, sem
+precisar de um novo Decision Record.
+
+## Atualização — 2026-08-27 (cont.): fundo branco por padrão + seção nova em Shipment Details
+
+**Fundo branco por padrão.** O tema claro/escuro seguia `prefers-color-scheme`
+do sistema quando não havia escolha salva em `localStorage` — em ambiente com
+SO em dark mode, a primeira visita já abria escuro. A pedido do solicitante
+("deixe o fundo branco?"), removida a dependência de `prefers-color-scheme`:
+agora o app **sempre abre claro** por padrão; escuro só ativa se o usuário
+clicar no toggle (persiste em `localStorage` como antes). Adicionado também
+`color-scheme: only light`/`only dark` nos tokens — mitiga (mas não
+garante 100%) navegadores com "forçar modo escuro" no nível do Chrome, que
+reescreve páginas independente do CSS da própria página.
+
+**Nota de investigação:** logo depois dessa mudança, a screenshot da
+automação do navegador (Claude in Chrome) continuou parecendo escura mesmo
+com `getComputedStyle` confirmando fundo `#FAFAEF` (branco) via DOM. Isso é
+um filtro de "modo escuro forçado" do ambiente/navegador de automação, não
+um bug do app — confirmado quando o solicitante mandou um print do Chrome
+normal dele mostrando a mesma tela em claro.
+
+**Seção "Deliveries by Postcode Area" em Shipment Details.** O print do
+Chrome normal do solicitante (comparado acima) revelou uma seção que não
+existia no modal `ShipmentDetailsDialog`: dois cards colapsáveis por postcode
+(ME2 · 4 stops · badge PRE 12 · 50%; ME5 · 2 stops · PRE 12 · 100%), com
+barra de progresso fina e chevron de expandir. Busquei essa seção no arquivo
+Figma (`LhKS6kSzY2ZxtnsKqOSHFN`, frame `132:8781` e no dump completo da
+página "Doing") e **não encontrei** — nem no frame específico nem em nenhum
+outro ponto do documento a que tenho acesso; o solicitante confirmou que é
+do Figma, mas não tinha o link do frame à mão. Reconstruído só a partir do
+que é visível no print (não fabriquei dado que não aparece): badges
+`ME2`/`ME5`, contagem de stops, badge `PRE 12`, `%` e barra. O clique no
+chevron **expande de verdade** — em vez de inventar sub-dados novos,
+reaproveita `allStops` (já mock, já usado no modal All Stops) filtrado por
+postcode, já que a lista de paradas por postcode é exatamente esse dado.
+Marcado com comentário no `data/mock.ts` como aproximação — se alguém achar
+o node/link certo no Figma, conferir os números reais e trocar o dado.
+
+## Atualização — 2026-08-27 (cont.): funções puxadas de `sp-portal-react` (produção real)
+
+A pedido do solicitante ("puxe as funções da page acima"), apontando para
+`/Users/mazinijoaomarcelo/Desktop/BA - LOGIX/subsystem/logix-subsistem/
+sp-portal-react/src/pages/RouteBalance/RouteBalance.tsx` — a implementação
+real de produção do Route Balance (2386 linhas, ~25 funções), fora deste
+repositório. **Só leitura** desse arquivo; nada foi alterado lá (é código de
+produção, fora da autoridade deste Workspace — ver regra do CLAUDE.md).
+
+Escopo é grande demais pra uma rodada só; perguntado ao solicitante o que
+priorizar. Resposta: tudo, com ênfase em **ações de rota** (aprovar, enviar
+pros motoristas, desfazer, exportar CSV) e **editar postcode/parada**.
+Implementado nesta rodada:
+
+- **Novo modelo de dados** (`src/data/route-domain.ts`): `Stop`/`RouteRow`
+  com paradas reais por rota (postcode, endereço, cliente, tipo DEL/PU,
+  turno am/pm, flags pre12/asr/dsr, status pending/completed) — antes cada
+  rota só tinha `done`/`total` fixos, sem paradas de verdade por trás.
+  Portado quase 1:1: `rand`, `pick`, `subpostcodeOf`, `groupBySubpostcode`
+  (grupos com Pre-12 ordenam primeiro). Geração de dados adaptada (endereços
+  reaproveitados do mock já existente), 8 rotas A-01..A-08, contagens
+  done/total mantidas iguais à versão anterior (73%/100%) pra não quebrar a
+  fidelidade visual já validada com o solicitante.
+- **KPIs viraram agregados reais** (`kpiTotals` no hook) em vez de string fixa
+  — Total Stops/Pré-Deliveries/Archived Service Rate/Dalayed Service Rate
+  agora somam `stops[]` de verdade (pre12/asr/dsr), reagem a turno AM/PM e a
+  edições. Os 3 últimos KPIs viraram **filtro clicável** (toggleDashboardFilter
+  portado) — clicar filtra os cards pra só mostrar rotas com pelo menos uma
+  parada daquele tipo.
+- **Ações de rota** (`src/hooks/use-route-balance.ts`, portado de
+  `toggleRouteApproval`/`sendToDrivers`/`revertLastAction`/`exportRouteCsv`):
+  o ✓ do card agora aprova/retira aprovação de verdade (pending → approved →
+  sent, por turno); "▷ Save" no toolbar virou o "Send to Driver" em lote real
+  (só envia rotas aprovadas; reenvia tudo se já estiver tudo enviado); botão
+  de revert (↺, some quando não há ação pra desfazer) desfaz o último
+  aprovar/enviar; "Export CSV" no card expandido baixa um CSV de verdade
+  (Blob + `<a download>`) com as paradas visíveis da rota. **Simplificado**:
+  produção mantém um array `history` completo por rota com autor/timestamp;
+  aqui é só o último `lastAction` (um nível de undo, não uma timeline).
+- **Editar postcode/parada**: `AddPostcodeDialog` ganhou a validação real de
+  formato (regex de postcode `ME15 6AB` vs subpostcode `ME15`) e seleção de
+  rota — igual à produção, é validação-only (não insere parada de verdade,
+  mesmo comportamento de lá). Novo `EditStopDialog` (não existia) — clicar
+  numa parada em "All Stops" abre editar postcode + Pre-12, com escopo
+  "esta parada" vs "todas com esse postcode na rota", e a mesma regra de
+  negócio real: turno PM nunca pode ter Pre-12 marcado (some com toast se
+  tentar). `AllStopsDialog`/`SpecialDeliveriesDialog`/`ShipmentDetailsDialog`
+  agora recebem a rota clicada e mostram os dados reais dela (turno, flags,
+  contagens), não mais um mock global igual pra qualquer card.
+- **Toasts** (`use-toasts.ts` + `ToastStack`): sistema de toast real com
+  undo (portado de `showToast`/`dismissToast`), redesenhado em Tailwind
+  (produção usa Bootstrap Icons/CSS que este protótipo não usa).
+
+**Não portado nesta rodada** (fora do que foi priorizado; ficaria pra uma
+próxima rodada se pedido):
+- Drag-and-drop de paradas entre rotas (`transferStops`, cards com
+  `draggable`) e o modal "Compare Routes" (grid lado a lado com drop zone).
+- Tabela-resumo ordenável (`handleSort`, `filteredRoutes.sort`) e o "route
+  focus" ao clicar uma linha dela — este protótipo não tem essa tabela.
+- Gauges animados (speedômetro/anel do "Operation Summary", `useCountUp`,
+  geometria SVG) — específico da UI antiga (Bootstrap), não portado pro
+  design system atual.
+- `history` completo por rota (autor, timestamp, timeline) — simplificado
+  pra um `lastAction` único, como descrito acima.
+- `saveNewRoute`/`closeEmptyRoute` (fechar rota vazia) — `AddFlexRouteDialog`
+  já existia antes desta rodada e não foi religado à validação real
+  (nome obrigatório + unicidade) por não ter sido reforçado no pedido.
+- Import real de arquivo (`discoProcessing.ts`, parser DISCO) — a tela de
+  Import continua mock, como já registrado antes.
+- Pieces/peso físico/breakdown por tipo de embarque em Shipment Details
+  continuam mock fixo — `Stop` neste protótipo não carrega
+  `shipmentType`/`pieces`/`physicalWeight` (produção carrega); portar isso
+  exigiria estender o modelo de dados, deixado de fora por não ter sido
+  destacado no pedido.
+
+Validado no navegador: aprovar rota → "▷ Save" envia (badge SENT) → revert
+desfaz; abrir All Stops → clicar parada → editar postcode → reflete na
+lista; Add Postcode rejeita formato inválido (modal não fecha); KPIs
+recalculam com o turno. `npm run build` e `oxlint` limpos.

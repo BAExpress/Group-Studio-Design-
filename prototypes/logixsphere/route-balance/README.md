@@ -3,111 +3,104 @@
 Protótipo do módulo **Route Balance**. Escopo original vindo do handoff do
 Figma (página Handoff → `handoff-route-balance`); a casca do app (topbar,
 toolbar de ações, footer) e os fluxos de Import, Add Post Code, All Stops,
-Special Deliveries, Rebalance Preview e Add New Flex Route vieram do board de
-exploração (página Doing). Não é produção — ver `DESIGN_ENGINEERING_TASK.md`
-para escopo, constraints e caminho de promoção.
+Special Deliveries, Rebalance Preview, Add New Flex Route e Shipment Details
+vieram do board de exploração (página Doing). Não é produção — ver
+`DESIGN_ENGINEERING_TASK.md` para escopo, constraints e caminho de promoção.
 
-## ⚠️ Divergência de stack em aberto (DR-GDS-001)
+## Stack (DR-GDS-001)
 
-Em **2026-08-27**, a pedido do solicitante, a implementação em React foi
-removida. O protótipo é **HTML estático — uma página por frame do Figma**,
-sem framework, sem build e sem JS/CSS compartilhado entre páginas: cada
-arquivo é autocontido (estilos e script inline).
-
-A `DR-GDS-001` (Accepted, 2026-08-20) continua vigente e determina
-Vite + React + TypeScript + Tailwind + Radix/shadcn para
-`prototypes/logixsphere/`. **Este protótipo contradiz essa decisão e depende
-de um novo Decision Record que a substitua** (os DRs são canônicos no Shared
-Drive do Studio, `01_Governance` — não neste repositório). Até lá, trate esta
-pasta como exceção registrada, não como precedente.
-
-A versão React está preservada no branch **`react/route-balance-doing`**
-(commit `00d66b8`).
+Em **2026-08-27**, a pedido do solicitante, o protótipo voltou a ser
+**Vite + React + TypeScript + Tailwind CSS + Radix UI (componentes
+shadcn copiados para o repo)** — a stack definida pela `DR-GDS-001`
+(Accepted, 2026-08-20). A divergência registrada aqui em rodadas anteriores
+(quando o protótipo tinha sido reescrito como HTML estático, uma página por
+frame) está **resolvida**: o histórico de ambas as tentativas (React antiga e
+HTML) fica preservado no git — ver `DESIGN_ENGINEERING_TASK.md`.
 
 ## Estrutura
 
-Cada página é um arquivo `.html` completo, com CSS (custom properties
-light/dark) e JS inline — sem dependências, sem build:
+```
+web/
+  src/
+    components/
+      ui/              — primitivos estilo shadcn (Button, Dialog, Input,
+                          Label, Progress, Select, Badge, Table) sobre Radix
+      route-balance/    — componentes de tela: shell (sidebar/topbar/tema),
+                          KPI grid, Route Card, e os 6 modais (Add Postcode,
+                          Add Flex Route, Special Deliveries, All Stops,
+                          Rebalance Preview, Shipment Details)
+    data/mock.ts        — dados mock centralizados (antes espalhados por
+                          9 arquivos .html)
+    pages/              — DashboardPage e ImportPage (as duas rotas reais;
+                          os "modais" das páginas antigas viraram Dialogs
+                          abertos a partir do dashboard, não páginas soltas)
+    index.css           — tokens de cor (claro/escuro) mapeados para o
+                          @theme do Tailwind v4
+  api/, vercel.json     — mock API Express/Vercel da rodada React anterior;
+                          nenhuma tela atual a consome (dados vêm de
+                          data/mock.ts) — mantido até decidir remoção
+```
 
-- `web/01-dashboard.html` — dashboard Route Balance (KPIs, grade de 8 route
-  cards, toolbar de ações). Expandir/colapsar card é o único estado com JS
-  próprio; os demais botões navegam para a página correspondente.
-- `web/02-import-disco.html` — fluxo de importação DISCO em 2 estados
-  (upload → grade de demandas extraídas), com toast de sucesso.
-- `web/03-route-card-states.html` — sheet de referência do componente Route
-  Card nos três estados (Default / Expanded / Rebalance), fora do fluxo do
-  app.
-- `web/04-modal-add-postcode.html` — modal Add_Postcode sobre o dashboard.
-- `web/05-modal-special-deliveries.html` — modal Special Deliveries.
-- `web/06-modal-all-stops.html` — modal All Stops.
-- `web/07-modal-rebalance-preview.html` — modal Rebalance Preview.
-- `web/08-modal-add-flex-route.html` — modal Add New Flex Route.
-- `server/` e `web/api/` — mock API Express / Vercel Serverless que servia a
-  versão React anterior. **Nenhuma página HTML atual a consome** — os dados
-  são fixos, embutidos em cada arquivo. Mantido no repo até decidir se volta
-  a ser usado ou é removido.
-
-As páginas de modal (04–08) são telas completas — reproduzem o dashboard ao
-fundo com um overlay, replicando fielmente o frame do Figma — não `<dialog>`
-nem componente reaproveitável. Fechar (×) ou "Cancel" navegam de volta para
-`01-dashboard.html`.
-
-## Navegação ligada
-
-A partir de `01-dashboard.html`:
-- **Importar** → `02-import-disco.html`
-- **+ Add New Flex Rote** → `08-modal-add-flex-route.html`
-- **Special Deliveries ★** (no card expandido) → `05-modal-special-deliveries.html`
-- **See All Stops** (no card expandido) → `06-modal-all-stops.html`
-- **⇄ Rebalance** (card no card no estado 100%+) → `07-modal-rebalance-preview.html`
-
-Sem entrada no dashboard para `04-modal-add-postcode.html` (não há botão
-"Add Post Code" nesta versão do dashboard) nem para `03-route-card-states.html`
-(sheet de referência, não faz parte do fluxo) — abra-os diretamente pela URL.
-"Colapse Routes", "See Details" e "▷ Save" não têm página/comportamento
-associado nesta rodada.
+Rotas: `/` (dashboard) e `/import` (fluxo de importação DISCO). Os demais
+fluxos (Add Postcode, Add Flex Route, Special Deliveries, All Stops,
+Rebalance Preview, Shipment Details) são `Dialog` do Radix abertos a partir
+do dashboard — mantêm o padrão visual "fundo do dashboard + overlay" das
+páginas antigas, mas agora como diálogo real (foco preso, ESC fecha, sem
+duplicar o HTML do dashboard por tela).
 
 ## Rodando localmente
 
-Não há build nem dependências: **abra `web/01-dashboard.html` no navegador**
-(duplo clique funciona).
-
-Se preferir servir por HTTP:
-
 ```bash
-npm run dev     # python3 -m http.server 5173 --directory web
+cd web
+npm install
+npm run dev       # http://localhost:5173
 ```
 
-E abra `http://localhost:5173/01-dashboard.html`.
+Outros comandos: `npm run build` (typecheck + build), `npm run lint`
+(oxlint), `npm run preview`.
+
+## Fidelidade em relação à versão HTML anterior
+
+Todas as 9 telas HTML (dashboard, import, 6 modais, e a sheet de referência
+de estados do Route Card) foram portadas com fidelidade visual, incluindo:
+- Tema claro/escuro com toggle manual persistido (`localStorage`,
+  chave `rb-theme`) — mesmo comportamento da versão HTML.
+- Layout responsivo (sidebar colapsa em barra horizontal abaixo de 860px,
+  grids fluidos via `auto-fit`/`auto-fill`, tabelas com scroll horizontal).
+- Funções do dashboard: toggle AM/PM (atualiza o chip de turno dos cards),
+  toggle Rebalance/Operations (filtra para rotas ≥100%), Colapse/Expand
+  Routes, busca de rotas por texto, e o botão "Add Post Code" que faltava na
+  versão HTML.
+
+**Ganhos da migração** (não existiam na versão HTML estática):
+- Combobox de postcodes em `Add_Postcode` agora funciona de verdade
+  (clicar na lista adiciona/remove chip) — na versão HTML era só decorativo.
+- Diálogos são Radix `Dialog` reais: foco preso, `Esc` fecha, `aria-*`
+  correto — a versão HTML simulava modal com overlay + página cheia.
+- Estado compartilhado entre componentes via React (ex.: expandir/colapsar
+  um card não depende de reconstruir HTML manualmente).
 
 ## Pendências conhecidas
 
-- **Novo Decision Record de stack** — ver aviso no topo.
-- **Dados fixos por página.** Cada arquivo tem seus próprios números
-  hardcoded; não há estado compartilhado entre páginas (ex.: validar uma rota
-  no dashboard não reflete nos modais, que sempre mostram os mesmos dados de
-  exemplo).
+- **Import não lê o arquivo de verdade.** "Process →" sempre mostra a mesma
+  amostra mock (PRE-12/Postcode Analysis/Size Class fixos), igual à versão
+  HTML — não há parser XLSX real.
 - **Todos os route cards mostram "Carlos Silva" / "YF25 OZL" / "Route A-01".**
-  Só done/total variam entre os 8 cards do dashboard — os demais campos são
-  placeholder repetido.
-- **Sem entrada de dashboard para Add_Postcode** (página existe, órfã) e sem
-  página para "Colapse Routes" (tem JS), "See Details" e "▷ Save" (sem
-  handler/destino).
-- **Import não lê o arquivo.** "Process File" sempre mostra a mesma amostra
-  (A01–A04, 8 courier segments), independente do arquivo selecionado.
-- Alguns valores exatos de tokens/copy podem não refletir 100% o handoff —
-  conferir com Aline antes de promover qualquer coisa para `design-system/`
-  ou `components/approved/`.
-- Sem breakpoints responsivos (tablet/desktop 27"/ultrawide 49" do Figma) —
-  esta versão cobre só desktop.
+  Só done/total variam — mesma limitação de dados da versão HTML.
+- **"See Details" e "▷ Save" sem handler** — botões presentes, sem ação
+  associada (igual à versão HTML).
+- **"PM ASR/DSR Listing"** (botão visto no toolbar do Figma) continua não
+  implementado — não fazia parte do escopo confirmado.
 - Sem suíte de testes automatizada nesta rodada.
+- `server/` e `web/api/` (mock Express/Vercel) não são consumidos por
+  nenhuma tela atual — avaliar remoção numa rodada futura.
 
 ## Publicação (Vercel)
 
 **Publicado (revisão):** https://web-seven-weld-58.vercel.app — projeto Vercel
-`web` na conta `jhophjm-8408`. **Essa URL ainda serve a versão React**; o
-projeto precisa ser reconfigurado para site estático (sem build, apontando
-para `01-dashboard.html`) antes do próximo deploy.
+`web` na conta `jhophjm-8408`. Essa URL foi publicada como site estático (a
+versão HTML anterior) — precisa de um novo deploy apontando para
+`npm run build` / diretório `dist/` antes de refletir esta versão React.
 
 **Redeploy — cuidado, `cd web && npx vercel deploy --prod` normalmente trava**
 em "Building…" para sempre. Causa raiz confirmada via `--debug`: o Vercel lê o
@@ -124,6 +117,6 @@ explícito no terminal. Duas opções:
    `vercel deploy --prod --yes` de lá — sem `.git` no caminho, o Vercel não
    anexa metadados de autor e o bloqueio não é acionado.
    ```bash
-   rsync -a web/ /tmp/rb-deploy-stage/
-   cd /tmp/rb-deploy-stage && npx vercel deploy --prod --yes
+   rsync -a web/ /tmp/rb-deploy-stage/ --exclude node_modules --exclude dist
+   cd /tmp/rb-deploy-stage && npm install && npx vercel deploy --prod --yes
    ```

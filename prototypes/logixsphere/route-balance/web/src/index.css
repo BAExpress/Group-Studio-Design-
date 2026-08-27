@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/*
+  Route Balance / "Industrial Terminal" tokens — espelham 1:1 as custom
+  properties usadas nos protótipos HTML 01-09 (ver DESIGN_ENGINEERING_TASK.md).
+  Indireção via --rb-* permite trocar de tema (claro/escuro) sem redeclarar
+  o @theme do Tailwind, que só pode ser definido uma vez.
+*/
+:root {
+  color-scheme: only light;
+  --rb-bg: #FAFAEF;
+  --rb-surface: #F4F4EE;
+  --rb-surface-2: #EAEADF;
+  --rb-ink: #1C1C16;
+  --rb-ink-dim: #6B6B5E;
+  --rb-ink-faint: #9A9A8A;
+  --rb-outline: #C7C7BC;
+  --rb-outline-soft: #DEDED2;
+  --rb-olive: #446900;
+  --rb-olive-ink: #F6FBEA;
+  --rb-lime: #A3E635;
+  --rb-lime-ink: #1E2B0C;
+  --rb-lime-soft: #E7F9CC;
+  --rb-teal: #27676C;
+  --rb-teal-soft: #CDEBEA;
+  --rb-error: #BA1A1A;
+  --rb-error-soft: #F6D6D6;
+  --rb-warn: #C97A2B;
+  --rb-warn-soft: #F3DFC3;
+  --rb-gray-chip: #E3E3DA;
+  --rb-overlay: #2F312A99;
+  --rb-focus: #27676C;
+  --rb-card-shadow: 0 1px 2px rgba(30,30,20,.08);
+}
+[data-theme="dark"] {
+  color-scheme: only dark;
+  --rb-bg: #15170F; --rb-surface: #1D2016; --rb-surface-2: #262A1B;
+  --rb-ink: #F0F1E6; --rb-ink-dim: #AEB19C; --rb-ink-faint: #7C806C;
+  --rb-outline: #3A3E2C; --rb-outline-soft: #2B2F20;
+  --rb-olive: #8FCB3B; --rb-olive-ink: #16210A;
+  --rb-lime: #A3E635; --rb-lime-ink: #16210A; --rb-lime-soft: #2A3618;
+  --rb-teal: #6FD0D6; --rb-teal-soft: #173538;
+  --rb-error: #FF8C82; --rb-error-soft: #3A1616;
+  --rb-warn: #F0A855; --rb-warn-soft: #3A2B12;
+  --rb-gray-chip: #2B2E22; --rb-overlay: #050603B8;
+  --rb-card-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+@theme {
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  --color-background: var(--rb-bg);
+  --color-on-background: var(--rb-ink);
+
+  --color-surface: var(--rb-surface);
+  --color-surface-variant: var(--rb-surface-2);
+  --color-on-surface: var(--rb-ink);
+  --color-on-surface-variant: var(--rb-ink-dim);
+
+  --color-primary: var(--rb-olive);
+  --color-on-primary: var(--rb-olive-ink);
+  --color-primary-container: var(--rb-lime-soft);
+  --color-on-primary-container: var(--rb-olive);
+  --color-primary-bright: var(--rb-lime);
+  --color-on-primary-bright: var(--rb-lime-ink);
+
+  --color-secondary: var(--rb-teal);
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: var(--rb-teal-soft);
+  --color-on-secondary-container: var(--rb-teal);
+
+  --color-tertiary: var(--rb-warn);
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: var(--rb-warn-soft);
+  --color-on-tertiary-container: var(--rb-warn);
+
+  --color-error: var(--rb-error);
+  --color-on-error: #ffffff;
+  --color-error-container: var(--rb-error-soft);
+  --color-on-error-container: var(--rb-error);
+
+  --color-outline: var(--rb-outline);
+  --color-outline-variant: var(--rb-outline-soft);
+  --color-chip: var(--rb-gray-chip);
+  --color-overlay: var(--rb-overlay);
+  --color-focus: var(--rb-focus);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;}
+button{font-family:inherit;}
+::selection{background:var(--color-primary-container);}
+.font-display{font-family:var(--font-display);}
+[hidden]{display:none !important;}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;}}
