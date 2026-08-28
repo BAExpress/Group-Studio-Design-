@@ -1,7 +1,8 @@
-import { Download, RotateCcw } from 'lucide-react'
+import { Download, LogOut, RotateCcw } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { groupBySubpostcode, type RouteRow, type ShiftKey } from '@/data/route-domain'
 
@@ -15,6 +16,7 @@ interface RouteCardProps {
   onToggleApproval: () => void
   onExportCsv: () => void
   onRevert: () => void
+  onCloseRoute: () => void
   dragActive: boolean
   isDropTarget: boolean
   onStartDrag: (stopIds: number[], label: string) => void
@@ -34,6 +36,7 @@ export function RouteCard({
   onToggleApproval,
   onExportCsv,
   onRevert,
+  onCloseRoute,
   dragActive,
   isDropTarget,
   onStartDrag,
@@ -116,6 +119,17 @@ export function RouteCard({
               <RotateCcw className="size-3.5" />
             </button>
           )}
+          {route.stops.length === 0 && (
+            <button
+              type="button"
+              onClick={onCloseRoute}
+              aria-label="Close route"
+              title="Close this empty route"
+              className="flex size-[26px] items-center justify-center rounded-sm border border-error text-error hover:bg-error-container"
+            >
+              <LogOut className="size-3.5" />
+            </button>
+          )}
           {over && (
             <button
               type="button"
@@ -147,9 +161,12 @@ export function RouteCard({
         <div className="text-xs font-semibold">
           {done} / {stops.length} stops ({p}%)
         </div>
-        <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-outline-variant">
-          <div className={cn('h-full', over ? 'bg-error' : 'bg-primary')} style={{ width: `${Math.min(p, 100)}%` }} />
-        </div>
+        <Progress
+          value={Math.min(p, 100)}
+          aria-label={`Route progress: ${done} of ${stops.length} stops completed`}
+          className="mt-2 h-[5px] bg-outline-variant"
+          indicatorClassName="bg-primary"
+        />
       </div>
 
       {route.expanded && (

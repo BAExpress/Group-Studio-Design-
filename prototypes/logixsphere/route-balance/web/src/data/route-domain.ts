@@ -10,6 +10,7 @@ export type StopStatus = 'pending' | 'completed'
 export type SendStatus = 'pending' | 'approved' | 'sent'
 export type ShiftKey = 'am' | 'pm'
 export type DashboardFilterKey = 'pre12' | 'asr' | 'dsr'
+export type SortKey = 'name' | 'driver' | 'target' | 'totalStops'
 
 export interface Stop {
   id: number

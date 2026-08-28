@@ -13,6 +13,7 @@ import {
   type RouteRow,
   type SendStatus,
   type ShiftKey,
+  type SortKey,
   type Stop,
 } from '@/data/route-domain'
 
@@ -29,6 +30,9 @@ export function useRouteBalance() {
   const [mode, setMode] = useState<'operations' | 'rebalance'>('operations')
   const [search, setSearch] = useState('')
   const [dashboardFilter, setDashboardFilter] = useState<DashboardFilterKey | null>(null)
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+  const [focusRouteId, setFocusRouteId] = useState<number | null>(null)
 
   const [editStopId, setEditStopId] = useState<number | null>(null)
   const [editPostcodeVal, setEditPostcodeVal] = useState('')
@@ -60,8 +64,43 @@ export function useRouteBalance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routes, search, mode, shift, dashboardFilter])
 
-  /* ---------- dashboard KPIs — agregados reais a partir de routes[].stops, não mais valor fixo ---------- */
-  const allVisibleStops = routes.flatMap(visibleStops)
+  /** Ported from filteredRoutes' sort branch — same tri-state (name/driver/target/totalStops) column sort, used by the summary table. */
+  const sortedRoutes = useMemo(() => {
+    if (!sortKey) return visibleRoutes
+    const dir = sortAsc ? 1 : -1
+    const value = (r: RouteRow) => (sortKey === 'totalStops' ? visibleStops(r).length : r[sortKey])
+    return [...visibleRoutes].sort((a, b) => {
+      const av = value(a)
+      const bv = value(b)
+      return (av > bv ? 1 : av < bv ? -1 : 0) * dir
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleRoutes, sortKey, sortAsc, shift])
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortAsc((a) => !a)
+    else {
+      setSortKey(key)
+      setSortAsc(true)
+    }
+  }
+
+  const focusRoute = focusRouteId != null ? routes.find((r) => r.id === focusRouteId) ?? null : null
+
+  /** Ported from toggleFocusRoute() — clicking a summary-table row scopes the KPI cards to just that route. */
+  function toggleFocusRoute(routeId: number) {
+    const route = routes.find((r) => r.id === routeId)
+    if (!route) return
+    setFocusRouteId((prev) => {
+      const next = prev === routeId ? null : routeId
+      showToast(next ? `Summary scoped to Route ${route.name}` : 'Route focus cleared', 'info')
+      return next
+    })
+  }
+
+  /* ---------- dashboard KPIs — agregados reais a partir de routes[].stops, não mais valor fixo; escopados à rota em foco quando houver uma ---------- */
+  const scopedRoutes = focusRoute ? [focusRoute] : routes
+  const allVisibleStops = scopedRoutes.flatMap(visibleStops)
   const kpiTotals = {
     totalStops: allVisibleStops.length,
     pre12: allVisibleStops.filter((s) => s.pre12).length,
@@ -164,6 +203,23 @@ export function useRouteBalance() {
       transferStops(dragPayload.sourceRouteId, targetRouteId, dragPayload.stopIds, dragPayload.label)
     }
     endDrag()
+  }
+
+  /** Ported from closeEmptyRoute() — only actually removes the route; callers enable the button once route.stops is empty (across both shifts, like production). */
+  function closeEmptyRoute(routeId: number) {
+    if (routes.length <= 1) {
+      showToast('At least two routes are required to close one', 'error')
+      return
+    }
+    const removed = routes.find((r) => r.id === routeId)
+    if (!removed) return
+    if (removed.stops.length > 0) {
+      showToast('Redistribute every postcode off this route before closing it', 'error')
+      return
+    }
+    setRoutes((prev) => prev.filter((r) => r.id !== routeId))
+    if (focusRouteId === routeId) setFocusRouteId(null)
+    showToast(`Route ${removed.name} closed`, 'success')
   }
 
   /** Ported from toggleRouteApproval() — the card's checkmark arms/withdraws the route for the next batch send. */
@@ -321,6 +377,14 @@ export function useRouteBalance() {
   return {
     routes,
     visibleRoutes,
+    sortedRoutes,
+    sortKey,
+    sortAsc,
+    focusRouteId,
+    focusRoute,
+    handleSort,
+    toggleFocusRoute,
+    closeEmptyRoute,
     shift,
     mode,
     search,

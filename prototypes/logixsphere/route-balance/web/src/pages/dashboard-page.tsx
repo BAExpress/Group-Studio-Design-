@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AppShell } from '@/components/route-balance/app-shell'
 import { KpiGrid } from '@/components/route-balance/kpi-grid'
+import { RouteSummaryTable } from '@/components/route-balance/route-summary-table'
 import { RouteCard } from '@/components/route-balance/route-card'
 import { AddPostcodeDialog } from '@/components/route-balance/add-postcode-dialog'
 import { AddFlexRouteDialog } from '@/components/route-balance/add-flex-route-dialog'
@@ -87,7 +88,7 @@ export function DashboardPage() {
           + Add New Flex Rote
         </Button>
         <Button variant="lime" onClick={rb.sendToDrivers}>
-          ▷ Save
+          ▷ Send to Drivers
         </Button>
       </div>
 
@@ -100,12 +101,21 @@ export function DashboardPage() {
         onToggleFilter={rb.toggleDashboardFilter}
       />
 
+      <RouteSummaryTable
+        routes={rb.sortedRoutes}
+        shift={rb.shift}
+        sortKey={rb.sortKey}
+        focusRouteId={rb.focusRouteId}
+        onSort={rb.handleSort}
+        onToggleFocus={rb.toggleFocusRoute}
+      />
+
       {rb.visibleRoutes.length === 0 ? (
         <p className="mb-5 -mt-2 text-[11.5px] leading-relaxed text-on-surface-variant">
           Nenhuma rota corresponde ao filtro atual.
         </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,252px)] items-start gap-4 max-[560px]:grid-cols-[repeat(auto-fill,minmax(252px,1fr))]">
           {rb.visibleRoutes.map((route) => (
             <RouteCard
               key={route.id}
@@ -118,6 +128,7 @@ export function DashboardPage() {
               onToggleApproval={() => rb.toggleRouteApproval(route.id)}
               onExportCsv={() => rb.exportRouteCsv(route.id)}
               onRevert={() => rb.revertLastAction(route.id)}
+              onCloseRoute={() => rb.closeEmptyRoute(route.id)}
               dragActive={!!rb.dragPayload}
               isDropTarget={rb.dropTargetRouteId === route.id}
               onStartDrag={(stopIds, label) => rb.startDrag(route.id, stopIds, label)}

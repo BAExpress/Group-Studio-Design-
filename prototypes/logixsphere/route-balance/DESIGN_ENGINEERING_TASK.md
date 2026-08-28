@@ -578,3 +578,116 @@ fora na rodada anterior:
   antes de considerar 100% validado.
 
 `npm run build` e `oxlint` seguem limpos depois dessas duas adições.
+
+## Atualização — 2026-08-27 (cont.): Close Route + tabela-resumo ordenável com "route focus"
+
+A pergunta "tem mais alguma função?" levantou o que ainda faltava; o
+solicitante escolheu **Close Route** e **tabela-resumo ordenável +
+route focus** (não pediu o modal "Compare Routes", que continua de fora).
+
+- **`closeEmptyRoute`**: novo botão (ícone vermelho, `LogOut`) no card,
+  visível só quando a rota está com `stops.length === 0` (todas as paradas
+  já redistribuídas via drag-and-drop ou nunca tiveram nenhuma, caso de uma
+  rota recém-criada) — some a rota da lista; bloqueia se só sobrar 1 rota,
+  igual à produção. Testado criando uma rota vazia (Add New Flex Route) e
+  fechando-a — sumiu da grade.
+- **`RouteSummaryTable`** (novo componente): tabela abaixo dos KPIs listando
+  todas as rotas visíveis — Route/Driver/Target/Total Stops — com as 4
+  colunas ordenáveis por clique (produção só tinha `name`/`driver`
+  clicáveis nos dois `<th>` com `onClick`; aqui as 4 ficaram clicáveis já
+  que o `SortKey` da produção já cobria as 4, parece só ter faltado ligar
+  o `onClick` nos outros dois `<th>` lá). Clicar numa linha ativa
+  `toggleFocusRoute` — escopa os KPIs (Total Stops/Pré-Deliveries/Archived/
+  Dalayed) só àquela rota, com toast, linha em destaque (fundo lime) e as
+  outras linhas esmaecidas; clicar de novo limpa o foco. Testado: focar
+  Route A-02 mudou "Total Stops" de 72 pra 9 e "routes" de 5 pra 1; clicar
+  de novo voltou ao total.
+
+`npm run build` e `oxlint` limpos depois dessas duas adições também.
+
+## Atualização — 2026-08-27 (cont.): botões conferidos contra Frame 11 + barra de progresso com Progress do Radix
+
+**Botões (`Frame 11.png`, mesma pasta de export usada no início da tarefa):**
+comparei o toolbar e os botões do card contra esse frame. Achado real: o
+botão lime do toolbar dizia **"▷ Save"**, mas o frame mostra **"▷ Send to
+Drivers"** — e a função por trás já era `sendToDrivers()` (só o rótulo
+estava desatualizado de uma rodada anterior). Corrigido. Resto conferido e
+já batia: `Importar` (olive sólido), `+ Add New Flex Rote`/`▷ Send to
+Drivers` (lime), botão canto `+`/`−` do card (quadrado lime), `Export
+CSV`/`See All Stops` (outline + olive sólido, mesmo par visual de `SEE
+DETAILS`/`SEE ALL STOPS` do frame — só o rótulo do primeiro botão mudou
+numa rodada anterior pra virar uma função real de exportar CSV, mantido
+assim). **Não removidos**: `Add Post Code` e `Colapse Routes` no toolbar —
+esse frame específico não os mostra, mas vieram de outro export Figma mais
+completo (via MCP, rodada anterior) e já são funções reais; não achei
+justificativa pra tirar algo funcional só por um frame mais antigo não
+mostrar.
+
+**Barra de progresso** (pedido separado, "seguindo a lógica" da página real
+de produção): a produção usa `role="progressbar"` com
+`aria-valuenow/min/max` e `aria-label` explícitos — ARIA real, não só uma
+div colorida. Este protótipo já tinha um primitivo Radix (`ui/progress.tsx`)
+pronto pra isso desde a migração pra React, mas o `RouteCard` nunca tinha
+sido religado pra usá-lo — a barra era uma `<div>` simples sem nenhuma
+semântica de acessibilidade. Trocado pelo componente `<Progress>` (Radix,
+ganha `role`/`aria-valuenow` automático) com `aria-label` explícito igual à
+produção. **Mantida** a diferença de cor vermelha em ≥100% (`over`) — isso
+não existe na produção (lá a barra é sempre um gradiente único, sem relação
+com o "%") mas é fidelidade direta do Figma (o próprio Frame 11 já mostra as
+duas rotas 100% com barra vermelha) e está amarrado à troca de
+Validate→Rebalance; segui o Figma nesse ponto específico, não a produção.
+
+`npm run build` e `oxlint` limpos.
+
+**Correção — mesmo dia:** o solicitante pediu de volta a barra verde em
+100% ("a barra em 100% deve ficar verde"). Removida a cor vermelha
+condicional da barra — sempre verde (`bg-primary`) independente de `%`,
+igual à lógica de produção (single-color, sem relação com o valor). O botão
+`⇄ Rebalance` (substituindo `✓ Validate`) e o badge "Pending" continuam
+amarrados a `over = p>=100` sem mudança — só a cor da barra em si foi
+revertida, nada mais foi pedido.
+
+## Atualização — 2026-08-27 (cont.): tamanho do card idêntico ao Frame 11-1
+
+Pedido pra deixar o tamanho dos route cards idêntico ao
+`Frame 11-1.png` (mesmo arquivo, byte-idêntico ao `Frame 11.png` já usado
+antes). Investigado com `getBoundingClientRect()` no navegador antes de
+mexer:
+
+- **Altura (stretch de linha)**: já estava correta — os 4 cards de uma
+  mesma linha do CSS Grid já tinham exatamente a mesma altura/`bottom`
+  (`align-items: stretch` é o padrão do Grid), igual ao Figma (cards
+  colapsados ao lado de um expandido esticam pra acompanhar). Nenhuma
+  mudança necessária aqui; a leitura visual inicial de "os outros cards
+  estão mais baixos" era só o rodapé do card estar fora da viewport da
+  screenshot, não uma diferença real.
+- **Largura**: essa sim estava errada. O grid usava
+  `minmax(260px,1fr)` — o `1fr` distribui o espaço sobrando da linha entre
+  os cards, então em telas largas cada card virava ~288px em vez dos
+  **252.25px** que é o tamanho real da instância "Route Card" no Figma
+  (conferido via Figma MCP nas rodadas anteriores: `Frame 1` com 4 rotas
+  tem `width=1057`, cada `Route Card` `width=252.25`, gap 16). Trocado
+  `grid-template-columns` de `repeat(auto-fill,minmax(260px,1fr))` para
+  `repeat(auto-fill,252px)` — tamanho fixo, sem esticar pra preencher a
+  linha (sobra fica como espaço vazio à direita, igual ao Figma, em vez de
+  virar carta mais larga). Mantida uma exceção só abaixo de 560px
+  (`max-[560px]:grid-cols-[...minmax(252px,1fr)]`) pra não perder a
+  responsividade mobile já validada antes — só nesse breakpoint o card
+  volta a esticar pra ocupar a largura toda da tela.
+
+Confirmado via JS no console: `cards[0].getBoundingClientRect().width`
+passou de `288.25` pra exatos `252`.
+
+`npm run build` e `oxlint` limpos.
+
+**Correção — mesmo dia:** o solicitante reportou "o card aberto deforma os
+outros" — o stretch de altura por linha do Grid (documentado acima como
+"correto, igual ao Figma") na prática ficava ruim: expandir um card
+esticava a altura de TODOS os outros da mesma linha, mesmo sem conteúdo
+pra preencher esse espaço extra. Mesmo sendo fiel ao Figma, o resultado
+prático incomodou — revertido. Adicionado `items-start` no grid do
+`card-grid`, então cada card agora usa só a altura do próprio conteúdo,
+independente dos vizinhos. Confirmado via JS: card expandido 687px, os 3
+ao lado 330px cada (antes, os 4 ficavam em 657px, esticados igual).
+
+`npm run build` e `oxlint` limpos.
