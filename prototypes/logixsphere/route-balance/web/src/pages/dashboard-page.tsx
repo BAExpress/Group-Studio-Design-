@@ -118,6 +118,13 @@ export function DashboardPage() {
               onToggleApproval={() => rb.toggleRouteApproval(route.id)}
               onExportCsv={() => rb.exportRouteCsv(route.id)}
               onRevert={() => rb.revertLastAction(route.id)}
+              dragActive={!!rb.dragPayload}
+              isDropTarget={rb.dropTargetRouteId === route.id}
+              onStartDrag={(stopIds, label) => rb.startDrag(route.id, stopIds, label)}
+              onEndDrag={rb.endDrag}
+              onDragEnterCard={() => rb.dragPayload?.sourceRouteId !== route.id && rb.setDropTargetRouteId(route.id)}
+              onDragLeaveCard={() => rb.setDropTargetRouteId(null)}
+              onDropCard={() => rb.dropOnRoute(route.id)}
             />
           ))}
         </div>
@@ -126,7 +133,7 @@ export function DashboardPage() {
       <div className="mt-5 text-right text-[10.5px] text-on-surface-variant">© 2026 LOGIX / SPHERE OPERATIONAL SYSTEMS</div>
 
       <AddPostcodeDialog open={addPostcodeOpen} routes={rb.routes} onOpenChange={setAddPostcodeOpen} onConfirm={rb.confirmAddPostcode} />
-      <AddFlexRouteDialog open={addFlexRouteOpen} onOpenChange={setAddFlexRouteOpen} />
+      <AddFlexRouteDialog open={addFlexRouteOpen} onOpenChange={setAddFlexRouteOpen} onConfirm={rb.saveNewRoute} />
       <SpecialDeliveriesDialog route={specialDeliveriesRoute} shift={rb.shift} onOpenChange={(v) => !v && setSpecialDeliveriesRouteId(null)} />
       <AllStopsDialog
         route={allStopsRoute}

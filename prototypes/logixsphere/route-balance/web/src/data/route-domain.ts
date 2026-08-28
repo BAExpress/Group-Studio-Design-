@@ -127,8 +127,20 @@ const ADDRESSES = [
   { address: 'Ballard Business Park, Strood', postcode: 'ME207' },
 ]
 
+// Sem diretório real de motorista/veículo ainda — mesma lista fixa portada
+// de RouteBalance.tsx (produção) usada pra "Add New Flex Route".
+export const DRIVERS = [
+  'Carlos Silva', 'Ana Costa', 'João Martins', 'Maria Santos', 'Pedro Oliveira',
+  'Lucas Pereira', 'Sofia Alves', 'Ricardo Dias', 'Juliana Ribeiro', 'Felipe Costa',
+]
+export const VEHICLES = ['YF25 OZL', 'YF25 ABC', 'YF25 DEF', 'YF25 GHI', 'YF25 JKL']
+
 let stopIdSeq = 1
 let routeIdSeq = 1
+
+export function nextRouteId() {
+  return ++routeIdSeq
+}
 
 function generateStop(routeName: string, stopNumber: number, pm: boolean): Stop {
   const loc = pick(ADDRESSES)

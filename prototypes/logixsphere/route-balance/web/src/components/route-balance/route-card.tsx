@@ -15,6 +15,13 @@ interface RouteCardProps {
   onToggleApproval: () => void
   onExportCsv: () => void
   onRevert: () => void
+  dragActive: boolean
+  isDropTarget: boolean
+  onStartDrag: (stopIds: number[], label: string) => void
+  onEndDrag: () => void
+  onDragEnterCard: () => void
+  onDragLeaveCard: () => void
+  onDropCard: () => void
 }
 
 export function RouteCard({
@@ -27,17 +34,45 @@ export function RouteCard({
   onToggleApproval,
   onExportCsv,
   onRevert,
+  dragActive,
+  isDropTarget,
+  onStartDrag,
+  onEndDrag,
+  onDragEnterCard,
+  onDragLeaveCard,
+  onDropCard,
 }: RouteCardProps) {
   const stops = route.stops.filter((s) => (shift === 'pm' ? s.pm : !s.pm))
   const done = stops.filter((s) => s.status === 'completed').length
   const p = stops.length ? Math.round((done / stops.length) * 100) : 0
   const over = p >= 100
-  const groups = groupBySubpostcode(stops).slice(0, 2)
+  const allGroups = groupBySubpostcode(stops)
+  const groups = allGroups.slice(0, 2)
   const specialCount = stops.filter((s) => s.pre12 || s.asr || s.dsr).length
   const sendStatus = route.sendStatus[shift]
 
   return (
-    <article className="flex flex-col gap-3 rounded-[3px] border border-outline-variant bg-surface p-4 shadow-[var(--rb-card-shadow)]">
+    <article
+      onDragOver={(e) => {
+        if (!dragActive) return
+        e.preventDefault()
+      }}
+      onDragEnter={() => dragActive && onDragEnterCard()}
+      onDragLeave={(e) => {
+        if (!dragActive) return
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
+        onDragLeaveCard()
+      }}
+      onDrop={(e) => {
+        if (!dragActive) return
+        e.preventDefault()
+        onDropCard()
+      }}
+      className={cn(
+        'flex flex-col gap-3 rounded-[3px] border bg-surface p-4 shadow-[var(--rb-card-shadow)] transition-colors',
+        isDropTarget ? 'border-primary-bright ring-2 ring-primary-bright' : 'border-outline-variant',
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="flex gap-1.5">
           <button
@@ -137,7 +172,18 @@ export function RouteCard({
             </thead>
             <tbody>
               {groups.map((g) => (
-                <tr key={g.code}>
+                <tr
+                  key={g.code}
+                  draggable
+                  title={`Drag to move ${g.code} to another route`}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move'
+                    const stopIds = g.postcodes.flatMap((pc) => pc.stops.map((s) => s.id))
+                    onStartDrag(stopIds, g.code)
+                  }}
+                  onDragEnd={onEndDrag}
+                  className="cursor-grab active:cursor-grabbing"
+                >
                   <td className="border-b border-outline-variant px-2 py-1.5 tabular-nums">{g.code}</td>
                   <td className="border-b border-outline-variant px-2 py-1.5 tabular-nums">{g.del}</td>
                   <td className="border-b border-outline-variant px-2 py-1.5 tabular-nums">{g.pu}</td>
@@ -150,6 +196,9 @@ export function RouteCard({
               ))}
             </tbody>
           </table>
+          {allGroups.length > 0 && (
+            <p className="mt-1.5 text-[9.5px] text-on-surface-variant">Arraste um postcode pra outra rota pra mover.</p>
+          )}
           <div className="mt-2 flex gap-2">
             <Button variant="secondary" size="sm" className="flex-1 gap-1.5 text-[10.5px]" onClick={onExportCsv}>
               <Download className="size-3" /> Export CSV

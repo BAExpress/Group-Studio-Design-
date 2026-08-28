@@ -524,8 +524,10 @@ Implementado nesta rodada:
 
 **Não portado nesta rodada** (fora do que foi priorizado; ficaria pra uma
 próxima rodada se pedido):
-- Drag-and-drop de paradas entre rotas (`transferStops`, cards com
-  `draggable`) e o modal "Compare Routes" (grid lado a lado com drop zone).
+- Modal "Compare Routes" (grid lado a lado com drop zone própria e navegação
+  prev/next entre rotas pra comparar) — o drag-and-drop *entre route cards*
+  no dashboard foi portado (ver "Atualização" seguinte), só o modal dedicado
+  de comparação não.
 - Tabela-resumo ordenável (`handleSort`, `filteredRoutes.sort`) e o "route
   focus" ao clicar uma linha dela — este protótipo não tem essa tabela.
 - Gauges animados (speedômetro/anel do "Operation Summary", `useCountUp`,
@@ -533,9 +535,8 @@ próxima rodada se pedido):
   design system atual.
 - `history` completo por rota (autor, timestamp, timeline) — simplificado
   pra um `lastAction` único, como descrito acima.
-- `saveNewRoute`/`closeEmptyRoute` (fechar rota vazia) — `AddFlexRouteDialog`
-  já existia antes desta rodada e não foi religado à validação real
-  (nome obrigatório + unicidade) por não ter sido reforçado no pedido.
+- `closeEmptyRoute` (fechar rota vazia depois de esvaziada) — não portado;
+  `saveNewRoute` (criar rota) foi portado na atualização seguinte.
 - Import real de arquivo (`discoProcessing.ts`, parser DISCO) — a tela de
   Import continua mock, como já registrado antes.
 - Pieces/peso físico/breakdown por tipo de embarque em Shipment Details
@@ -548,3 +549,32 @@ Validado no navegador: aprovar rota → "▷ Save" envia (badge SENT) → revert
 desfaz; abrir All Stops → clicar parada → editar postcode → reflete na
 lista; Add Postcode rejeita formato inválido (modal não fecha); KPIs
 recalculam com o turno. `npm run build` e `oxlint` limpos.
+
+## Atualização — 2026-08-27 (cont.): continuação — drag-and-drop e Add Flex Route reais
+
+A pedido do solicitante ("continue"), portado mais do que tinha ficado de
+fora na rodada anterior:
+
+- **`saveNewRoute`** (Add New Flex Route): `AddFlexRouteDialog` ganhou
+  validação real (nome obrigatório + único entre as rotas existentes),
+  lista de motoristas real (`DRIVERS`, mesma lista fixa da produção — ainda
+  sem diretório real), campo Target (%), e cria de fato uma `RouteRow` nova
+  vazia (0 stops) na lista — antes só fechava o modal sem efeito.
+- **`transferStops` (drag-and-drop) entre route cards**: cada grupo de
+  subpostcode na mini-tabela do card expandido agora é `draggable`; soltar
+  num outro card transfere as paradas daquele subpostcode pra lá (recalcula
+  contagem/% dos dois lados, renumera as paradas movidas) — com undo via
+  toast, igual às outras ações. Card em hover-de-drop ganha destaque visual
+  (borda lime).
+  **Ressalva de teste**: automação de mouse simples (`left_click_drag`) não
+  disparou os eventos nativos de HTML5 drag-and-drop (limitação conhecida —
+  navegador exige um gesto de arrastar real do SO pra iniciar `dragstart`).
+  Validado disparando `DragEvent`s reais via JS no console do navegador
+  (`dragstart` → `dragenter` → `dragover` → `drop`, com espaço de tempo
+  real entre eles): a rota de origem foi de 7/9 pra 4/5 paradas, a de
+  destino de 7/9 pra 10/13, e o grupo de subpostcode movido sumiu da
+  origem — confirma que a lógica funciona; só não dá pra provar com clique
+  simulado de mouse neste ambiente. Testar com um drag de mouse de verdade
+  antes de considerar 100% validado.
+
+`npm run build` e `oxlint` seguem limpos depois dessas duas adições.

@@ -5,7 +5,10 @@ import {
   DASHBOARD_FILTER_LABELS,
   DASHBOARD_FILTER_MATCHERS,
   generateInitialRoutes,
+  nextRouteId,
+  pick,
   recomputeStopsCompletion,
+  VEHICLES,
   type DashboardFilterKey,
   type RouteRow,
   type SendStatus,
@@ -85,6 +88,82 @@ export function useRouteBalance() {
 
   function toggleExpand(routeId: number) {
     updateRoute(routeId, (r) => ({ ...r, expanded: !r.expanded }))
+  }
+
+  /** Ported from saveNewRoute() — required + unique name, driver from the fixed DRIVERS list, target %. */
+  function saveNewRoute(name: string, driver: string, target: string) {
+    const trimmed = name.trim()
+    const targetNum = parseInt(target, 10)
+    if (!trimmed) {
+      showToast('Route name is required', 'error')
+      return false
+    }
+    if (routes.some((r) => r.name === trimmed)) {
+      showToast('A route with this name already exists', 'error')
+      return false
+    }
+    setRoutes((prev) => [
+      ...prev,
+      {
+        id: nextRouteId(),
+        name: trimmed,
+        driver,
+        plate: pick(VEHICLES),
+        target: isNaN(targetNum) ? 85 : targetNum,
+        sendStatus: { am: 'pending', pm: 'pending' },
+        lastAction: null,
+        stops: [],
+        expanded: false,
+      },
+    ])
+    showToast(`Route ${trimmed} added`, 'success')
+    return true
+  }
+
+  /* ---------- drag-and-drop: mover paradas de uma rota pra outra ---------- */
+  const [dragPayload, setDragPayload] = useState<{ sourceRouteId: number; stopIds: number[]; label: string } | null>(null)
+  const [dropTargetRouteId, setDropTargetRouteId] = useState<number | null>(null)
+
+  /** Ported from transferStops() — moves a set of stops between routes, renumbering them on arrival; the toast's Undo replays the transfer in reverse. */
+  function transferStops(sourceRouteId: number, targetRouteId: number, stopIds: number[], label: string) {
+    if (!stopIds.length) {
+      showToast('Nothing to transfer', 'error')
+      return
+    }
+    const sourceName = routes.find((r) => r.id === sourceRouteId)?.name
+    const targetName = routes.find((r) => r.id === targetRouteId)?.name
+    setRoutes((prev) => {
+      const source = prev.find((r) => r.id === sourceRouteId)
+      const target = prev.find((r) => r.id === targetRouteId)
+      if (!source || !target) return prev
+      const moving = source.stops.filter((s) => stopIds.includes(s.id))
+      if (!moving.length) return prev
+      const remaining = source.stops.filter((s) => !stopIds.includes(s.id))
+      let nextNum = target.stops.length
+      const moved = moving.map((s) => ({ ...s, routeName: target.name, stopNumber: ++nextNum }))
+      return prev.map((r) => {
+        if (r.id === sourceRouteId) return { ...r, stops: remaining }
+        if (r.id === targetRouteId) return { ...r, stops: [...target.stops, ...moved] }
+        return r
+      })
+    })
+    showToast(`✓ Moved ${label || `${stopIds.length} deliveries: ${sourceName} → ${targetName}`}`, 'success', () => {
+      transferStops(targetRouteId, sourceRouteId, stopIds, `${targetName} → ${sourceName} (undo)`)
+    })
+  }
+
+  function startDrag(sourceRouteId: number, stopIds: number[], label: string) {
+    setDragPayload({ sourceRouteId, stopIds, label })
+  }
+  function endDrag() {
+    setDragPayload(null)
+    setDropTargetRouteId(null)
+  }
+  function dropOnRoute(targetRouteId: number) {
+    if (dragPayload && dragPayload.sourceRouteId !== targetRouteId) {
+      transferStops(dragPayload.sourceRouteId, targetRouteId, dragPayload.stopIds, dragPayload.label)
+    }
+    endDrag()
   }
 
   /** Ported from toggleRouteApproval() — the card's checkmark arms/withdraws the route for the next batch send. */
@@ -263,6 +342,7 @@ export function useRouteBalance() {
     revertLastAction,
     exportRouteCsv,
     confirmAddPostcode,
+    saveNewRoute,
     openEditStop,
     closeEditStop,
     saveStopEdit,
@@ -272,5 +352,11 @@ export function useRouteBalance() {
     dismissToast,
     visibleStops,
     CURRENT_USER,
+    dragPayload,
+    dropTargetRouteId,
+    setDropTargetRouteId,
+    startDrag,
+    endDrag,
+    dropOnRoute,
   }
 }
