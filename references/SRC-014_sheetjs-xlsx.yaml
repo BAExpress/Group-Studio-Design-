@@ -1,0 +1,18 @@
+# Source/Component Record — template do canônico §11.2
+name: SheetJS Community Edition (xlsx)
+url: https://sheetjs.com
+type: data-parsing
+technology: [javascript]
+license: Apache-2.0
+license_evidence_url: https://git.sheetjs.com/sheetjs/sheetjs/src/branch/master/LICENSE
+commercial_use: yes (licença permissiva) — ver risco de segurança em notes
+attribution_required: yes — manter LICENSE/NOTICE
+obligations: manter LICENSE e NOTICE; declarar modificações
+use_for: [reference, prototype]
+status: Discovered  # em uso em protótipo; aguarda revisão técnica (Dev) e de design (Aline) para Prototype Candidate
+used_in: [prototypes/logixsphere/route-balance/server, prototypes/logixsphere/route-balance/web/api]
+design_reviewed_by:  # ⬜ LACUNA — Aline
+technical_reviewed_by:  # ⬜ LACUNA — Dev
+last_reviewed: 2026-11-19  # licença conferida no package.json do pacote instalado (registro inicial por IA, não é aprovação)
+notes: >-
+  xlsx 0.18.5 do registry npm — ⚠ RISCO: versão abandonada no npm, com advisories HIGH sem correção ali (GHSA-4r6h-8v6p-xvw6 prototype pollution; GHSA-5pgg-2g8v-p4x9 ReDoS). Versões corrigidas só pela CDN da SheetJS (cdn.sheetjs.com). Trocar a fonte do pacote é decisão de Dev (D2) — não alterado. Mitigação no protótipo: só processar planilhas de origem confiável. Usado em server/src/import-parser.ts e web/api/_lib/import-parser.ts.

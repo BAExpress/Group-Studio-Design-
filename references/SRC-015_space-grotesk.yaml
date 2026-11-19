@@ -1,0 +1,18 @@
+# Source/Component Record — template do canônico §11.2
+name: Space Grotesk (fonte)
+url: https://fonts.google.com/specimen/Space+Grotesk
+type: font
+technology: [web-font]
+license: OFL-1.1
+license_evidence_url: https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt
+commercial_use: yes (licença permissiva)
+attribution_required: yes — manter LICENSE/NOTICE
+obligations: não vender a fonte isoladamente; manter OFL
+use_for: [reference, prototype]
+status: Discovered  # em uso em protótipo; aguarda revisão técnica (Dev) e de design (Aline) para Prototype Candidate
+used_in: [prototypes/logixsphere/route-balance/web, prototypes/experiments/gds-verificacao]
+design_reviewed_by:  # ⬜ LACUNA — Aline
+technical_reviewed_by:  # ⬜ LACUNA — Dev
+last_reviewed: 2026-11-19  # licença conferida no package.json do pacote instalado (registro inicial por IA, não é aprovação)
+notes: >-
+  Carregada via Google Fonts (pesos 500/700). Fonte display dos tokens do Route Balance.
