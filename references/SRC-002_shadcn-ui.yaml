@@ -1,0 +1,18 @@
+# Source/Component Record — template do canônico §11.2
+name: shadcn/ui (componentes copiados)
+url: https://ui.shadcn.com
+type: component-recipes
+technology: [react, tailwind, radix]
+license: MIT
+license_evidence_url: https://github.com/shadcn-ui/ui/blob/main/LICENSE.md
+commercial_use: yes (licença permissiva)
+attribution_required: yes — manter aviso de copyright/licença
+obligations: manter aviso de copyright e licença
+use_for: [reference, prototype]
+status: Discovered  # em uso em protótipo; aguarda revisão técnica (Dev) e de design (Aline) para Prototype Candidate
+used_in: [prototypes/logixsphere/route-balance/web, prototypes/experiments/gds-verificacao]
+design_reviewed_by:  # ⬜ LACUNA — Aline
+technical_reviewed_by:  # ⬜ LACUNA — Dev
+last_reviewed: 2026-11-19  # licença conferida no package.json do pacote instalado (registro inicial por IA, não é aprovação)
+notes: >-
+  Não é dependência de pacote: o código dos componentes é copiado para src/components/ui (convenção do CLAUDE.md).

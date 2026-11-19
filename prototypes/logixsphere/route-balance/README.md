@@ -120,3 +120,10 @@ explícito no terminal. Duas opções:
    rsync -a web/ /tmp/rb-deploy-stage/ --exclude node_modules --exclude dist
    cd /tmp/rb-deploy-stage && npm install && npx vercel deploy --prod --yes
    ```
+
+## Ajustes de 2026-11-19 (verificação GDS)
+
+Mudanças apontadas por `prototypes/experiments/gds-verificacao`:
+
+- **Contraste (WCAG AA):** `--rb-warn` no tema claro mudou de `#C97A2B` para `#93520E`. A cor antiga ficava em 2.56:1 sobre `warn-soft` e 3.0:1 sobre `surface`. `on-secondary`, `on-tertiary` e `on-error` passaram a usar `--rb-on-teal`, `--rb-on-warn` e `--rb-on-error`, que trocam com o tema: branco no claro e `#15170F` no escuro. Antes, o branco fixo dava entre 1.8:1 e 2.3:1 no escuro. `--rb-ink-dim` no claro mudou de `#6B6B5E` para `#66665A`, porque dava 4.46:1 sobre `surface-variant`. Mudança visual a validar com a Aline (D1).
+- **Dependências do `server/`:** `npm audit fix` atualizou `multer` e `body-parser` no lockfile, resolvendo advisories HIGH de DoS. O `xlsx` 0.18.5 segue com advisories sem correção no npm. Ver `references/SRC-014_sheetjs-xlsx.yaml`. A troca de fonte do pacote é decisão de Dev.
